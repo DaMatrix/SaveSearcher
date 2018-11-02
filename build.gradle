@@ -8,6 +8,7 @@ version '1.0-SNAPSHOT'
 sourceCompatibility = 1.8
 
 repositories {
+    mavenLocal()
     maven   {
         name = 'DaPorkchop_'
         url = 'https://maven.daporkchop.net/'
@@ -36,6 +37,6 @@ jar {
     manifest {
         attributes 'Implementation-Title': 'DaPorkchop_ok',
                 'Implementation-Version': version,
-                'Main-Class': 'net.daporkchop.regionmerger.RegionMerger'
+                'Main-Class': 'net.daporkchop.savesearcher.Main'
     }
 }
