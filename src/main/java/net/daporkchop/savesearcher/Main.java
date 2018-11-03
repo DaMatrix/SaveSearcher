@@ -17,7 +17,9 @@ package net.daporkchop.savesearcher;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.daporkchop.lib.binary.UTF8;
+import net.daporkchop.lib.http.SimpleHTTP;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
@@ -31,7 +33,9 @@ import net.daporkchop.savesearcher.module.SignModule;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -52,14 +56,42 @@ public class Main {
     }
 
     public static void main(String... args) throws IOException {
+        String versionName;
+        {
+            JsonParser parser = new JsonParser();
+            JsonObject local;
+            try (Reader reader = new InputStreamReader(Main.class.getResourceAsStream("/version.json"))) {
+                local = parser.parse(reader).getAsJsonObject();
+            }
+            try {
+                JsonObject remote = parser.parse(SimpleHTTP.getString("https://raw.githubusercontent.com/DaMatrix/SaveSearcher/master/src/main/resources/version.json")).getAsJsonObject();
+                if (local.get("version").getAsInt() < remote.get("version").getAsInt()) {
+                    System.out.printf("Outdated version! You're still on %s, but the latest version is %s.\n", local.get("name").getAsString(), remote.has("name") ? remote.get("name").getAsString() : "null");
+                    System.out.println("Download the latest version from https://github.com/DaMatrix/SaveSearcher");
+                    System.out.println("Scanner will start in 5 seconds...");
+                    try {
+                        Thread.sleep(5000L);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            } catch (Throwable t)   {
+                t.printStackTrace();
+                System.out.println();
+                System.out.println("Version check failed, ignoring");
+            }
+            versionName = local.get("name").getAsString();
+        }
         File worldFile = null;
         File outFile = new File(".", "scanresult.json");
         int dim = 0;
         boolean verbose = false;
         boolean prettyPrintJson = false;
         Collection<SearchModule> modules = new ArrayDeque<>();
+        System.out.printf("SaveSearcher v%s\n", versionName);
+        System.out.println("Copyright (c) DaPorkchop_");
+        System.out.println("https://github.com/DaMatrix/SaveSearcher");
         if (args.length == 0 || contains(args, "-h") || contains(args, "--help"))   {
-            System.out.println("SaveSearcher v0.0.1");
             System.out.println();
             System.out.println("--input=<path>                   Sets the input world path (required)");
             System.out.println("--dim=<dimension id>             Sets the dimension (world) id to scan. default=0");
@@ -74,6 +106,8 @@ public class Main {
             System.out.println("                                 WARNING! Can cause significant slowdown!");
             System.out.println("--avgheight                      Calculate and save the average terrain height of the world");
             return;
+        } else {
+            System.out.println("Starting...");
         }
         for (String s : args)   {
             String[] split = s.split("=");
@@ -133,7 +167,7 @@ public class Main {
             if (verbose)    {
                 scanner.addProcessor((curr, remaining, col) -> {
                     if ((col.getX() & 0x1F) == 31 && (col.getZ() & 0x1F) == 31)    {
-                        System.out.printf("Processing region (%d,%d), on chunk %d/~%d (%.2f%%)\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining, (double) curr / (double) remaining);
+                        System.out.printf("Processing region (%d,%d), on chunk %d/~%d (%.2f%%)\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining, ((double) curr / (double) remaining) * 100.0d);
                     }
                 });
             }
