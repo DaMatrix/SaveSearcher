@@ -81,9 +81,9 @@ public class BlockModule implements SearchModule {
                 for (int y = 255; y >= 0; y--) {
                     if (column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta)) {
                         JsonObject object = new JsonObject();
-                        object.addProperty("x", x);
+                        object.addProperty("x", x + (column.getX() << 4));
                         object.addProperty("y", y);
-                        object.addProperty("z", z);
+                        object.addProperty("z", z + (column.getZ() << 4));
                         synchronized (this.values)   {
                             this.values.add(object);
                         }

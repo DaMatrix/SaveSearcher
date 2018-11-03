@@ -40,6 +40,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
@@ -148,6 +149,8 @@ public class Main {
         } else if (modules.isEmpty())   {
             throw new IllegalArgumentException("No modules enabled!");
         }
+        long time = System.currentTimeMillis();
+        AtomicLong count = new AtomicLong(0L);
         try (MinecraftSave save = new SaveBuilder().setFormat(new AnvilSaveFormat(worldFile)).build()) {
             World world = save.getWorld(dim);
             if (world == null)  {
@@ -166,8 +169,9 @@ public class Main {
             };
             if (verbose)    {
                 scanner.addProcessor((curr, remaining, col) -> {
+                    count.set(curr);
                     if ((col.getX() & 0x1F) == 31 && (col.getZ() & 0x1F) == 31)    {
-                        System.out.printf("Processing region (%d,%d), on chunk %d/~%d (%.2f%%)\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining, ((double) curr / (double) remaining) * 100.0d);
+                        System.out.printf("Processing region (%d,%d), chunk %d/~%d (%.2f%%)\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining, ((double) curr / (double) remaining) * 100.0d);
                     }
                 });
             }
@@ -186,6 +190,14 @@ public class Main {
             os.write(builder.create().toJson(object).getBytes(UTF8.utf8));
         }
         System.out.println("Done!");
+        time = System.currentTimeMillis() - time;
+        System.out.printf(
+                "Scanned %d chunks in %dh:%dm:%ds\n",
+                count.get(),
+                time / (1000L * 60L * 60L),
+                time / (1000L * 60L) % 60,
+                time / (1000L) % 60
+        );
     }
 
     private static boolean contains(String[] arr, String s) {
