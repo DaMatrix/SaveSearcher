@@ -67,6 +67,9 @@ public class BlockModule implements SearchModule {
     @Override
     public void init(World world) {
         this.id = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(this.searchName);
+        if (this.id == -1)  {
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+        }
     }
 
     @Override

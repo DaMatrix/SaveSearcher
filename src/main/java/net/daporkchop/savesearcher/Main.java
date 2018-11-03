@@ -168,13 +168,13 @@ public class Main {
                 }
             };
             if (verbose)    {
-                scanner.addProcessor((curr, remaining, col) -> {
-                    count.set(curr);
-                    if ((col.getX() & 0x1F) == 31 && (col.getZ() & 0x1F) == 31)    {
-                        System.out.printf("Processing region (%d,%d), chunk %d/~%d (%.2f%%)\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining, ((double) curr / (double) remaining) * 100.0d);
+                scanner.addProcessor((current, estimatedTotal, column) -> {
+                    if ((column.getX() & 0x1F) == 31 && (column.getZ() & 0x1F) == 31)    {
+                        System.out.printf("Processing region (%d,%d), chunk %d/~%d (%.2f%%)\n", column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
                     }
                 });
             }
+            scanner.addProcessor((current, estimatedTotal, column) -> count.set(current));
             modules.forEach(scanner::addProcessor);
             //scanner.requireNeighboring();
             scanner.run(true);
