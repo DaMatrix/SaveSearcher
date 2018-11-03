@@ -15,52 +15,41 @@
 
 package net.daporkchop.savesearcher.module;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.minecraft.registry.ResourceLocation;
-import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
-import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
  */
-public class SignModule implements SearchModule {
-    private final JsonArray values = new JsonArray();
+public class AvgHeightModule implements SearchModule {
+    private final AtomicLong totalHeight = new AtomicLong(0L);
+    private final AtomicLong totalCount = new AtomicLong(0L);
 
-    public SignModule(String[] args) {
+    public AvgHeightModule(String[] args) {
     }
 
     @Override
     public void init(World world) {
+        this.totalHeight.set(0L);
+        this.totalCount.set(0L);
     }
 
     @Override
     public void saveData(JsonObject object) {
-        object.add("sign", this.values);
+        object.addProperty("avgHeight", (double) this.totalHeight.get() / (double) this.totalCount.get());
     }
 
     @Override
     public void handle(long current, long estimatedTotal, Column column) {
-        column.getTileEntities().stream()
-                .filter(te -> te instanceof TileEntitySign)
-                .map(te -> (TileEntitySign) te)
-                .forEach(te -> {
-                    JsonObject object = new JsonObject();
-                    object.addProperty("x", te.getX());
-                    object.addProperty("y", te.getY());
-                    object.addProperty("z", te.getZ());
-                    object.addProperty("line1", te.getLine1());
-                    object.addProperty("line2", te.getLine2());
-                    object.addProperty("line3", te.getLine3());
-                    object.addProperty("line4", te.getLine4());
-                    synchronized (this.values)  {
-                        this.values.add(object);
-                    }
-                });
+        this.totalCount.addAndGet(256L);
+        for (int x = 15; x >= 0; x--) {
+            for (int z = 15; z >= 0; z--) {
+                this.totalHeight.addAndGet(column.getHighestBlock(x, z));
+            }
+        }
     }
 }

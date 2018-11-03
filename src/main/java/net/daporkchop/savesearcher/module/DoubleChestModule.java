@@ -17,6 +17,7 @@ package net.daporkchop.savesearcher.module;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Column;
@@ -29,38 +30,55 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 /**
  * @author DaPorkchop_
  */
-public class SignModule implements SearchModule {
+public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProcessorNeighboring {
     private final JsonArray values = new JsonArray();
+    private int chestId;
+    private int trappedChestId;
 
-    public SignModule(String[] args) {
+    public DoubleChestModule(String[] args) {
     }
 
     @Override
     public void init(World world) {
+        this.chestId = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:chest"));
+        this.trappedChestId = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:trapped_chest"));
     }
 
     @Override
     public void saveData(JsonObject object) {
-        object.add("sign", this.values);
+        object.add("doublechest", this.values);
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
-        column.getTileEntities().stream()
-                .filter(te -> te instanceof TileEntitySign)
-                .map(te -> (TileEntitySign) te)
-                .forEach(te -> {
-                    JsonObject object = new JsonObject();
-                    object.addProperty("x", te.getX());
-                    object.addProperty("y", te.getY());
-                    object.addProperty("z", te.getZ());
-                    object.addProperty("line1", te.getLine1());
-                    object.addProperty("line2", te.getLine2());
-                    object.addProperty("line3", te.getLine3());
-                    object.addProperty("line4", te.getLine4());
-                    synchronized (this.values)  {
-                        this.values.add(object);
+    public void handle(long current, long estimatedTotal, World world, int x, int z) {
+        for (int xx = 15; xx >= 0; xx--) {
+            for (int zz = (xx & 1) == 0 ? 15 : 14; zz >= 0; zz -= 2) {
+                for (int y = 255; y >= 0; y--) {
+                    int id = world.getBlockId(x + xx, y, z + zz);
+                    if (id == this.chestId)  {
+                        if (world.getBlockId(x + xx + 1, y, z + zz) == this.chestId
+                                || world.getBlockId(x + xx, y, z + zz + 1) == this.chestId) {
+                            this.found(x + xx, y, z + zz, false);
+                        }
+                    } else if (id == this.trappedChestId)    {
+                        if (world.getBlockId(x + xx + 1, y, z + zz) == this.trappedChestId
+                                || world.getBlockId(x + xx, y, z + zz + 1) == this.trappedChestId) {
+                            this.found(x + xx, y, z + zz, true);
+                        }
                     }
-                });
+                }
+            }
+        }
+    }
+
+    private void found(int x, int y, int z, boolean trapped)    {
+        JsonObject object = new JsonObject();
+        object.addProperty("x", x);
+        object.addProperty("y", y);
+        object.addProperty("z", z);
+        object.addProperty("trapped", trapped);
+        synchronized (this.values)  {
+            this.values.add(object);
+        }
     }
 }

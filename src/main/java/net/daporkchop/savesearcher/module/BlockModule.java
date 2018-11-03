@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  * @author DaPorkchop_
  */
 public class BlockModule implements SearchModule {
-    private final Collection<JsonObject> values = new ConcurrentLinkedDeque<>();
+    private final JsonArray values = new JsonArray();
     private ResourceLocation searchName;
     private int meta = -1;
     private int id;
@@ -71,9 +71,7 @@ public class BlockModule implements SearchModule {
 
     @Override
     public void saveData(JsonObject object) {
-        JsonArray array = new JsonArray();
-        this.values.forEach(array::add);
-        object.add(String.format("block_%s_%d", this.searchName.toString(), this.meta), array);
+        object.add(String.format("block_%s_%d", this.searchName.toString(), this.meta), this.values);
     }
 
     @Override
@@ -86,7 +84,9 @@ public class BlockModule implements SearchModule {
                         object.addProperty("x", x);
                         object.addProperty("y", y);
                         object.addProperty("z", z);
-                        this.values.add(object);
+                        synchronized (this.values)   {
+                            this.values.add(object);
+                        }
                     }
                 }
             }

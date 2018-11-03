@@ -23,7 +23,9 @@ import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
+import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.BlockModule;
+import net.daporkchop.savesearcher.module.DoubleChestModule;
 import net.daporkchop.savesearcher.module.SignModule;
 
 import java.io.File;
@@ -45,6 +47,8 @@ public class Main {
     static {
         registeredModules.put("--block", BlockModule::new);
         registeredModules.put("--sign", SignModule::new);
+        registeredModules.put("--doublechest", DoubleChestModule::new);
+        registeredModules.put("--avgheight", AvgHeightModule::new);
     }
 
     public static void main(String... args) throws IOException {
@@ -62,6 +66,13 @@ public class Main {
             System.out.println("--verbose                        Print status updates to console");
             System.out.println("--prettyPrintJson                Makes the output json data be formatted");
             System.out.println("--output=<path>                  Set the file that output data will be written to. default=./scanresult.json");
+            System.out.println();
+            System.out.println("MODULES");
+            System.out.println("--block,id=<id>(,meta=<meta>)    Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.");
+            System.out.println("--sign                           Scan for sign blocks, saving coordinates and text.");
+            System.out.println("--doublechest                    Scan for double chests, saving coordinates and whether or not they're trapped.");
+            System.out.println("                                 WARNING! Can cause significant slowdown!");
+            System.out.println("--avgheight                      Calculate and save the average terrain height of the world");
             return;
         }
         for (String s : args)   {
@@ -122,7 +133,7 @@ public class Main {
             if (verbose)    {
                 scanner.addProcessor((curr, remaining, col) -> {
                     if ((col.getX() & 0x1F) == 31 && (col.getZ() & 0x1F) == 31)    {
-                        System.out.printf("Processing region (%d,%d), on chunk %d/~%d\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining);
+                        System.out.printf("Processing region (%d,%d), on chunk %d/~%d (%.2f%%)\n", col.getX() >> 5, col.getZ() >> 5, curr, remaining, (double) curr / (double) remaining);
                     }
                 });
             }
