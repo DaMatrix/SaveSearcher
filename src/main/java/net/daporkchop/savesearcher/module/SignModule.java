@@ -15,27 +15,16 @@
 
 package net.daporkchop.savesearcher.module;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 /**
  * @author DaPorkchop_
  */
-public class SignModule implements SearchModule {
-    private final JsonArray values = new JsonArray();
-
+public class SignModule extends SearchModule.BasePosSearchModule {
     public SignModule(String[] args) {
     }
 
@@ -44,28 +33,21 @@ public class SignModule implements SearchModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
-        object.add("values", this.values);
-    }
-
-    @Override
     public void handle(long current, long estimatedTotal, Column column) {
         column.getTileEntities().stream()
                 .filter(te -> te instanceof TileEntitySign)
                 .map(te -> (TileEntitySign) te)
-                .forEach(te -> {
-                    JsonObject object = new JsonObject();
-                    object.addProperty("x", te.getX());
-                    object.addProperty("y", te.getY());
-                    object.addProperty("z", te.getZ());
-                    object.addProperty("line1", te.getLine1());
-                    object.addProperty("line2", te.getLine2());
-                    object.addProperty("line3", te.getLine3());
-                    object.addProperty("line4", te.getLine4());
-                    synchronized (this.values)  {
-                        this.values.add(object);
-                    }
-                });
+                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), te.getLine1(), te.getLine2(), te.getLine3(), te.getLine4()));
+    }
+
+    @Override
+    protected JsonObject getObject(int x, int y, int z, Object... args) {
+        JsonObject object = super.getObject(x, y, z, args);
+        object.addProperty("line1", (String) args[0]);
+        object.addProperty("line2", (String) args[1]);
+        object.addProperty("line3", (String) args[2]);
+        object.addProperty("line4", (String) args[3]);
+        return object;
     }
 
     @Override
@@ -76,17 +58,5 @@ public class SignModule implements SearchModule {
     @Override
     public String getSaveFormat() {
         return "sign";
-    }
-
-    @Override
-    public Collection<Vec3i> getLocations() {
-        return StreamSupport.stream(this.values.spliterator(), false)
-                .map(JsonElement::getAsJsonObject)
-                .map(o -> new Vec3i(
-                        o.get("x").getAsInt(),
-                        o.get("y").getAsInt(),
-                        o.get("z").getAsInt()
-                ))
-                .collect(Collectors.toCollection(ArrayDeque::new));
     }
 }

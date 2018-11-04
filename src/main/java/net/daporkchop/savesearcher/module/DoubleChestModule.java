@@ -33,8 +33,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProcessorNeighboring {
-    private final JsonArray values = new JsonArray();
+public class DoubleChestModule extends SearchModule.BasePosSearchModule implements WorldScanner.ColumnProcessorNeighboring {
     private int chestId;
     private int trappedChestId;
 
@@ -48,11 +47,6 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
-        object.add("values", this.values);
-    }
-
-    @Override
     public void handle(long current, long estimatedTotal, World world, int x, int z) {
         for (int xx = 15; xx >= 0; xx--) {
             for (int zz = (xx & 1) == 0 ? 15 : 14; zz >= 0; zz -= 2) {
@@ -61,12 +55,12 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
                     if (id == this.chestId)  {
                         if (world.getBlockId(x + xx + 1, y, z + zz) == this.chestId
                                 || world.getBlockId(x + xx, y, z + zz + 1) == this.chestId) {
-                            this.found(x + xx, y, z + zz, false);
+                            this.add(x + xx, y, z + zz, false);
                         }
                     } else if (id == this.trappedChestId)    {
                         if (world.getBlockId(x + xx + 1, y, z + zz) == this.trappedChestId
                                 || world.getBlockId(x + xx, y, z + zz + 1) == this.trappedChestId) {
-                            this.found(x + xx, y, z + zz, true);
+                            this.add(x + xx, y, z + zz, true);
                         }
                     }
                 }
@@ -74,15 +68,11 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
         }
     }
 
-    private void found(int x, int y, int z, boolean trapped)    {
-        JsonObject object = new JsonObject();
-        object.addProperty("x", x);
-        object.addProperty("y", y);
-        object.addProperty("z", z);
-        object.addProperty("trapped", trapped);
-        synchronized (this.values)  {
-            this.values.add(object);
-        }
+    @Override
+    protected JsonObject getObject(int x, int y, int z, Object... args) {
+        JsonObject object = super.getObject(x, y, z, args);
+        object.addProperty("trapped", (boolean) args[0]);
+        return object;
     }
 
     @Override
@@ -93,17 +83,5 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
     @Override
     public String getSaveFormat() {
         return "double_chest";
-    }
-
-    @Override
-    public Collection<Vec3i> getLocations() {
-        return StreamSupport.stream(this.values.spliterator(), false)
-                .map(JsonElement::getAsJsonObject)
-                .map(o -> new Vec3i(
-                        o.get("x").getAsInt(),
-                        o.get("y").getAsInt(),
-                        o.get("z").getAsInt()
-                ))
-                .collect(Collectors.toCollection(ArrayDeque::new));
     }
 }

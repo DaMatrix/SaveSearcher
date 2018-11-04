@@ -34,10 +34,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public class BlockModule implements SearchModule {
-    protected static final AtomicInteger differentiatorId = new AtomicInteger(0);
-
-    protected final JsonArray values = new JsonArray();
+public class BlockModule extends SearchModule.BasePosSearchModule {
     protected ResourceLocation searchName;
     protected int meta = -1;
     protected int id;
@@ -85,7 +82,7 @@ public class BlockModule implements SearchModule {
 
     @Override
     public void saveData(JsonObject object, Gson gson) {
-        object.add("values", this.values);
+        super.saveData(object, gson);
         object.addProperty("id", this.searchName.toString());
         object.addProperty("meta", this.meta);
     }
@@ -103,13 +100,7 @@ public class BlockModule implements SearchModule {
 
     protected void checkAndAddPos(int x, int y, int z, Column column)   {
         if (column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta)) {
-            JsonObject object = new JsonObject();
-            object.addProperty("x", x + (column.getX() << 4));
-            object.addProperty("y", y);
-            object.addProperty("z", z + (column.getZ() << 4));
-            synchronized (this.values)   {
-                this.values.add(object);
-            }
+            this.add(x + (column.getX() << 4), y, z + (column.getZ() << 4));
         }
     }
 
@@ -121,17 +112,5 @@ public class BlockModule implements SearchModule {
     @Override
     public String getSaveFormat() {
         return "block";
-    }
-
-    @Override
-    public Collection<Vec3i> getLocations() {
-        return StreamSupport.stream(this.values.spliterator(), false)
-                .map(JsonElement::getAsJsonObject)
-                .map(o -> new Vec3i(
-                        o.get("x").getAsInt(),
-                        o.get("y").getAsInt(),
-                        o.get("z").getAsInt()
-                ))
-                .collect(Collectors.toCollection(ArrayDeque::new));
     }
 }
