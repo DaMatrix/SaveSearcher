@@ -63,4 +63,9 @@ public class SignModule implements SearchModule {
                     }
                 });
     }
+
+    @Override
+    public String toString() {
+        return "Signs";
+    }
 }

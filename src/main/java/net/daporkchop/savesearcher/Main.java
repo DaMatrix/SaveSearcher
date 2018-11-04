@@ -27,6 +27,7 @@ import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.BlockModule;
+import net.daporkchop.savesearcher.module.BlockRangeModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
 import net.daporkchop.savesearcher.module.SignModule;
 
@@ -54,6 +55,7 @@ public class Main {
         registeredModules.put("--sign", SignModule::new);
         registeredModules.put("--doublechest", DoubleChestModule::new);
         registeredModules.put("--avgheight", AvgHeightModule::new);
+        registeredModules.put("--blockinrange", BlockRangeModule::new);
     }
 
     public static void main(String... args) throws IOException {
@@ -66,8 +68,14 @@ public class Main {
             }
             try {
                 JsonObject remote = parser.parse(SimpleHTTP.getString("https://raw.githubusercontent.com/DaMatrix/SaveSearcher/master/src/main/resources/version.json")).getAsJsonObject();
-                if (local.get("version").getAsInt() < remote.get("version").getAsInt()) {
-                    System.out.printf("Outdated version! You're still on %s, but the latest version is %s.\n", local.get("name").getAsString(), remote.has("name") ? remote.get("name").getAsString() : "null");
+                int localVersion = Integer.parseInt(local.get("versionNew").getAsString().replaceAll("_", ""));
+                int remoteVersion = Integer.parseInt(remote.get("versionNew").getAsString().replaceAll("_", ""));
+                if (localVersion < remoteVersion) {
+                    System.out.printf(
+                            "Outdated version! You're still on %s, but the latest version is %s.\n",
+                            local.get("nameNew").getAsString().replaceAll(" ", ""),
+                            remote.get("nameNew").getAsString().replaceAll(" ", "")
+                    );
                     System.out.println("Download the latest version from https://github.com/DaMatrix/SaveSearcher");
                     System.out.println("Scanner will start in 5 seconds...");
                     try {
@@ -81,7 +89,7 @@ public class Main {
                 System.out.println();
                 System.out.println("Version check failed, ignoring");
             }
-            versionName = local.get("name").getAsString();
+            versionName = local.get("nameNew").getAsString().replaceAll(" ", "");
         }
         File worldFile = null;
         File outFile = new File(".", "scanresult.json");
@@ -92,20 +100,26 @@ public class Main {
         System.out.printf("SaveSearcher v%s\n", versionName);
         System.out.println("Copyright (c) DaPorkchop_");
         System.out.println("https://github.com/DaMatrix/SaveSearcher");
-        if (args.length == 0 || contains(args, "-h") || contains(args, "--help"))   {
+        if (args.length == 0
+                || contains(args, "-h")
+                || contains(args, "--help")
+                || contains(args, "--h")
+                || contains(args, "-help"))   {
             System.out.println();
-            System.out.println("--input=<path>                   Sets the input world path (required)");
-            System.out.println("--dim=<dimension id>             Sets the dimension (world) id to scan. default=0");
-            System.out.println("--verbose                        Print status updates to console");
-            System.out.println("--prettyPrintJson                Makes the output json data be formatted");
-            System.out.println("--output=<path>                  Set the file that output data will be written to. default=./scanresult.json");
+            System.out.println("--input=<path>                          Sets the input world path (required)");
+            System.out.println("--dim=<dimension id>                    Sets the dimension (world) id to scan. default=0");
+            System.out.println("--verbose                               Print status updates to console");
+            System.out.println("--prettyPrintJson                       Makes the output json data be formatted");
+            System.out.println("--output=<path>                         Set the file that output data will be written to. default=./scanresult.json");
             System.out.println();
             System.out.println("MODULES");
-            System.out.println("--block,id=<id>(,meta=<meta>)    Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.");
-            System.out.println("--sign                           Scan for sign blocks, saving coordinates and text.");
-            System.out.println("--doublechest                    Scan for double chests, saving coordinates and whether or not they're trapped.");
-            System.out.println("                                 WARNING! Can cause significant slowdown!");
-            System.out.println("--avgheight                      Calculate and save the average terrain height of the world");
+            System.out.println("--block,id=<id>(,meta=<meta>)           Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.");
+            System.out.println("--sign                                  Scan for sign blocks, saving coordinates and text.");
+            System.out.println("--doublechest                           Scan for double chests, saving coordinates and whether or not they're trapped.");
+            System.out.println("                                          WARNING! Can cause significant slowdown!");
+            System.out.println("--avgheight                             Calculate and save the average terrain height of the world");
+            System.out.println("--blockinrange,id=<id>(,meta=<meta>)    Scan for a certain block id+meta in a given vertical range, saving coordinates. Both min and max");
+            System.out.println("              (,min=<min>)(,max=<max>)  values are inclusive. defaults: min=0, max=255");
             return;
         } else {
             System.out.println("Starting...");
@@ -149,6 +163,10 @@ public class Main {
         } else if (modules.isEmpty())   {
             throw new IllegalArgumentException("No modules enabled!");
         }
+
+        System.out.printf("Beginning scan of world %s with %d scan modules enabled.\nModules:\n", worldFile.getAbsolutePath(), modules.size());
+        modules.forEach(m -> System.out.printf("  %s\n", m.toString()));
+
         long time = System.currentTimeMillis();
         AtomicLong count = new AtomicLong(0L);
         try (MinecraftSave save = new SaveBuilder().setFormat(new AnvilSaveFormat(worldFile)).build()) {

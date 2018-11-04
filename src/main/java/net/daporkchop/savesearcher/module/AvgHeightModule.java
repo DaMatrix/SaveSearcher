@@ -52,4 +52,9 @@ public class AvgHeightModule implements SearchModule {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "Average Height";
+    }
 }

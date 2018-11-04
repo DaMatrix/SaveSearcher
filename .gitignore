@@ -8,3 +8,5 @@ build/
 out/
 
 /scanresult.json
+
+/src/main/java/net/daporkchop/savesearcher/test/*.java

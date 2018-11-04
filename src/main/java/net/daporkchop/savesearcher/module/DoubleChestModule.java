@@ -81,4 +81,9 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
             this.values.add(object);
         }
     }
+
+    @Override
+    public String toString() {
+        return "Double Chests";
+    }
 }

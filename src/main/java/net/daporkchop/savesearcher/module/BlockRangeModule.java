@@ -22,20 +22,14 @@ import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * @author DaPorkchop_
  */
-public class BlockModule implements SearchModule {
-    protected static final AtomicInteger differentiatorId = new AtomicInteger(0);
+public class BlockRangeModule extends BlockModule {
+    private int minY = 0;
+    private int maxY = 255;
 
-    protected final JsonArray values = new JsonArray();
-    protected ResourceLocation searchName;
-    protected int meta = -1;
-    protected int id;
-
-    public BlockModule(String[] args) {
+    public BlockRangeModule(String[] args) {
         for (String s : args) {
             if (s.isEmpty()) {
                 continue;
@@ -56,68 +50,55 @@ public class BlockModule implements SearchModule {
                     }
                 }
                 break;
+                case "min":
+                case "minY":{
+                    this.minY = Integer.parseInt(split[1]);
+                }
+                break;
+                case "max":
+                case "maxY":{
+                    this.maxY = Integer.parseInt(split[1]);
+                }
+                break;
                 default:
                     throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
             }
         }
         if (this.searchName == null) {
             throw new IllegalArgumentException("No id given!");
-        }
-    }
-
-    protected BlockModule() {
-    }
-
-    @Override
-    public void init(World world) {
-        this.id = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(this.searchName);
-        if (this.id == -1)  {
-            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+        } else if (this.minY > this.maxY)   {
+            throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", this.minY, this.maxY));
         }
     }
 
     @Override
-    public void saveData(JsonObject object) {
-        object.add(this.getOutputName(), this.getOutputData());
-    }
-
-    protected JsonObject getOutputData()    {
-        JsonObject object = new JsonObject();
-        object.add("values", object);
-        object.addProperty("id", this.searchName.toString());
-        object.addProperty("meta", this.meta);
+    protected JsonObject getOutputData() {
+        JsonObject object = super.getOutputData();
+        JsonObject rangeObj = new JsonObject();
+        rangeObj.addProperty("min", this.minY);
+        rangeObj.addProperty("max", this.maxY);
+        object.add("range", rangeObj);
         return object;
     }
 
-    protected String getOutputName()    {
-        return String.format("block_%d", differentiatorId.getAndIncrement());
+    @Override
+    protected String getOutputName() {
+        return String.format("block_ranged_%d", differentiatorId.getAndIncrement());
     }
 
     @Override
     public void handle(long current, long estimatedTotal, Column column) {
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                for (int y = 255; y >= 0; y--) {
+                for (int y = this.maxY; y >= this.minY; y--) {
                     this.checkAndAddPos(x, y, z, column);
                 }
             }
         }
     }
 
-    protected void checkAndAddPos(int x, int y, int z, Column column)   {
-        if (column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta)) {
-            JsonObject object = new JsonObject();
-            object.addProperty("x", x + (column.getX() << 4));
-            object.addProperty("y", y);
-            object.addProperty("z", z + (column.getZ() << 4));
-            synchronized (this.values)   {
-                this.values.add(object);
-            }
-        }
-    }
-
     @Override
     public String toString() {
-        return String.format("Block (id=%s, meta=%d)", this.searchName.toString(), this.meta);
+        return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
     }
 }
