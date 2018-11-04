@@ -46,7 +46,7 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
 
     @Override
     public void saveData(JsonObject object) {
-        object.add("doublechest", this.values);
+        object.add("values", this.values);
     }
 
     @Override
@@ -85,5 +85,10 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
     @Override
     public String toString() {
         return "Double Chests";
+    }
+
+    @Override
+    public String getSaveFormat() {
+        return "double_chest";
     }
 }

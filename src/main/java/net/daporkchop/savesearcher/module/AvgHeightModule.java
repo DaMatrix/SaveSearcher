@@ -40,7 +40,7 @@ public class AvgHeightModule implements SearchModule {
 
     @Override
     public void saveData(JsonObject object) {
-        object.addProperty("avgHeight", (double) this.totalHeight.get() / (double) this.totalCount.get());
+        object.addProperty("height", (double) this.totalHeight.get() / (double) this.totalCount.get());
     }
 
     @Override
@@ -56,5 +56,10 @@ public class AvgHeightModule implements SearchModule {
     @Override
     public String toString() {
         return "Average Height";
+    }
+
+    @Override
+    public String getSaveFormat() {
+        return "average_height";
     }
 }

@@ -78,19 +78,9 @@ public class BlockModule implements SearchModule {
 
     @Override
     public void saveData(JsonObject object) {
-        object.add(this.getOutputName(), this.getOutputData());
-    }
-
-    protected JsonObject getOutputData()    {
-        JsonObject object = new JsonObject();
-        object.add("values", object);
+        object.add("values", this.values);
         object.addProperty("id", this.searchName.toString());
         object.addProperty("meta", this.meta);
-        return object;
-    }
-
-    protected String getOutputName()    {
-        return String.format("block_%d", differentiatorId.getAndIncrement());
     }
 
     @Override
@@ -119,5 +109,10 @@ public class BlockModule implements SearchModule {
     @Override
     public String toString() {
         return String.format("Block (id=%s, meta=%d)", this.searchName.toString(), this.meta);
+    }
+
+    @Override
+    public String getSaveFormat() {
+        return "block";
     }
 }

@@ -41,7 +41,7 @@ public class SignModule implements SearchModule {
 
     @Override
     public void saveData(JsonObject object) {
-        object.add("sign", this.values);
+        object.add("values", this.values);
     }
 
     @Override
@@ -67,5 +67,10 @@ public class SignModule implements SearchModule {
     @Override
     public String toString() {
         return "Signs";
+    }
+
+    @Override
+    public String getSaveFormat() {
+        return "sign";
     }
 }

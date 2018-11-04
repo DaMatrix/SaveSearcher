@@ -16,6 +16,7 @@
 package net.daporkchop.savesearcher;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.daporkchop.lib.binary.UTF8;
@@ -199,13 +200,20 @@ public class Main {
         }
         System.out.println("Finished scan. Saving data...");
         try (OutputStream os = new FileOutputStream(outFile)) {
-            JsonObject object = new JsonObject();
-            modules.forEach(m -> m.saveData(object));
+            JsonArray array = new JsonArray();
+            modules.forEach(m -> {
+                JsonObject object = new JsonObject();
+                object.addProperty("format", m.getSaveFormat());
+                JsonObject subObject = new JsonObject();
+                object.add("data", subObject);
+                m.saveData(subObject);
+                array.add(object);
+            });
             GsonBuilder builder = new GsonBuilder();
             if (prettyPrintJson)    {
                 builder.setPrettyPrinting();
             }
-            os.write(builder.create().toJson(object).getBytes(UTF8.utf8));
+            os.write(builder.create().toJson(array).getBytes(UTF8.utf8));
         }
         System.out.println("Done!");
         time = System.currentTimeMillis() - time;

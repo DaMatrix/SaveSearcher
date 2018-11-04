@@ -72,18 +72,12 @@ public class BlockRangeModule extends BlockModule {
     }
 
     @Override
-    protected JsonObject getOutputData() {
-        JsonObject object = super.getOutputData();
+    public void saveData(JsonObject object) {
+        super.saveData(object);
         JsonObject rangeObj = new JsonObject();
         rangeObj.addProperty("min", this.minY);
         rangeObj.addProperty("max", this.maxY);
         object.add("range", rangeObj);
-        return object;
-    }
-
-    @Override
-    protected String getOutputName() {
-        return String.format("block_ranged_%d", differentiatorId.getAndIncrement());
     }
 
     @Override
@@ -100,5 +94,10 @@ public class BlockRangeModule extends BlockModule {
     @Override
     public String toString() {
         return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
+    }
+
+    @Override
+    public String getSaveFormat() {
+        return "block_ranged";
     }
 }

@@ -26,4 +26,6 @@ public interface SearchModule extends WorldScanner.ColumnProcessor {
     void init(World world);
 
     void saveData(JsonObject object);
+
+    String getSaveFormat();
 }
