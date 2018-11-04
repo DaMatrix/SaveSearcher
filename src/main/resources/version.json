@@ -1,4 +1,6 @@
 {
-  "version": 101,
-  "name": "0.1.1"
+  "version": 100000,
+  "name":       "1.0.0",
+  "versionNew": "001_000_000",
+  "nameNew":    "  1.  0.  0"
 }
