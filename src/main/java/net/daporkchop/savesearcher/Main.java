@@ -15,6 +15,7 @@
 
 package net.daporkchop.savesearcher;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -30,6 +31,7 @@ import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.BlockModule;
 import net.daporkchop.savesearcher.module.BlockRangeModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
+import net.daporkchop.savesearcher.module.JourneymapModule;
 import net.daporkchop.savesearcher.module.SignModule;
 
 import java.io.File;
@@ -57,6 +59,7 @@ public class Main {
         registeredModules.put("--doublechest", DoubleChestModule::new);
         registeredModules.put("--avgheight", AvgHeightModule::new);
         registeredModules.put("--blockinrange", BlockRangeModule::new);
+        registeredModules.put("--journeymap", JourneymapModule::new);
     }
 
     public static void main(String... args) throws IOException {
@@ -121,11 +124,15 @@ public class Main {
             System.out.println("--avgheight                             Calculate and save the average terrain height of the world");
             System.out.println("--blockinrange,id=<id>(,meta=<meta>)    Scan for a certain block id+meta in a given vertical range, saving coordinates. Both min and max");
             System.out.println("              (,min=<min>)(,max=<max>)  values are inclusive. defaults: min=0, max=255");
+            System.out.println("--journeymap,root=<path>                Generate waypoint files for JourneyMap in the given output directory. Waypoints for each module will be placed in their own subdirectory.");
             return;
         } else {
             System.out.println("Starting...");
         }
         for (String s : args)   {
+            if (s.isEmpty())    {
+                continue;
+            }
             String[] split = s.split("=");
             switch (split[0])   {
                 case "--input":
@@ -165,6 +172,15 @@ public class Main {
             throw new IllegalArgumentException("No modules enabled!");
         }
 
+        Gson gson;
+        {
+            GsonBuilder builder = new GsonBuilder();
+            if (prettyPrintJson)    {
+                builder.setPrettyPrinting();
+            }
+            gson = builder.create();
+        }
+
         System.out.printf("Beginning scan of world %s with %d scan modules enabled.\nModules:\n", worldFile.getAbsolutePath(), modules.size());
         modules.forEach(m -> System.out.printf("  %s\n", m.toString()));
 
@@ -197,6 +213,8 @@ public class Main {
             modules.forEach(scanner::addProcessor);
             //scanner.requireNeighboring();
             scanner.run(true);
+
+            modules.forEach(m -> m.beforeExit(modules, gson, world));
         }
         System.out.println("Finished scan. Saving data...");
         try (OutputStream os = new FileOutputStream(outFile)) {
@@ -206,14 +224,10 @@ public class Main {
                 object.addProperty("format", m.getSaveFormat());
                 JsonObject subObject = new JsonObject();
                 object.add("data", subObject);
-                m.saveData(subObject);
+                m.saveData(subObject, gson);
                 array.add(object);
             });
-            GsonBuilder builder = new GsonBuilder();
-            if (prettyPrintJson)    {
-                builder.setPrettyPrinting();
-            }
-            os.write(builder.create().toJson(array).getBytes(UTF8.utf8));
+            os.write(gson.toJson(array).getBytes(UTF8.utf8));
         }
         System.out.println("Done!");
         time = System.currentTimeMillis() - time;

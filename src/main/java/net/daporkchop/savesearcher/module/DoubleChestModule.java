@@ -15,17 +15,20 @@
 
 package net.daporkchop.savesearcher.module;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
-import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
-import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * @author DaPorkchop_
@@ -45,7 +48,7 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
     }
 
     @Override
-    public void saveData(JsonObject object) {
+    public void saveData(JsonObject object, Gson gson) {
         object.add("values", this.values);
     }
 
@@ -90,5 +93,17 @@ public class DoubleChestModule implements SearchModule, WorldScanner.ColumnProce
     @Override
     public String getSaveFormat() {
         return "double_chest";
+    }
+
+    @Override
+    public Collection<Vec3i> getLocations() {
+        return StreamSupport.stream(this.values.spliterator(), false)
+                .map(JsonElement::getAsJsonObject)
+                .map(o -> new Vec3i(
+                        o.get("x").getAsInt(),
+                        o.get("y").getAsInt(),
+                        o.get("z").getAsInt()
+                ))
+                .collect(Collectors.toCollection(ArrayDeque::new));
     }
 }

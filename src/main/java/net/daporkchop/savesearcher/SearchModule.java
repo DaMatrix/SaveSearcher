@@ -15,9 +15,13 @@
 
 package net.daporkchop.savesearcher;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.world.World;
+
+import java.util.Collection;
 
 /**
  * @author DaPorkchop_
@@ -25,7 +29,14 @@ import net.daporkchop.lib.minecraft.world.World;
 public interface SearchModule extends WorldScanner.ColumnProcessor {
     void init(World world);
 
-    void saveData(JsonObject object);
+    void saveData(JsonObject object, Gson gson);
 
     String getSaveFormat();
+
+    default Collection<Vec3i> getLocations()    {
+        return null;
+    }
+
+    default void beforeExit(Collection<SearchModule> modules, Gson gson, World world)  {
+    }
 }
