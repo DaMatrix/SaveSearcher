@@ -1,7 +1,7 @@
 /*
  * Adapted from the Wizardry License
  *
- * Copyright (c) 2018-2018 DaPorkchop_ and contributors
+ * Copyright (c) 2018-2019 DaPorkchop_ and contributors
  *
  * Permission is hereby granted to any persons and/or organizations using this software to copy, modify, merge, publish, and distribute it. Said persons and/or organizations are not allowed to use the software or any derivatives of the work for commercial use or any other means to generate income, nor are they allowed to claim this software as their own.
  *
@@ -99,9 +99,13 @@ public class BlockModule extends SearchModule.BasePosSearchModule {
     }
 
     protected void checkAndAddPos(int x, int y, int z, Column column)   {
-        if (column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta)) {
+        if (this.check(x, y, z, column)) {
             this.add(x + (column.getX() << 4), y, z + (column.getZ() << 4));
         }
+    }
+
+    protected boolean check(int x, int y, int z, Column column) {
+        return column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta);
     }
 
     @Override

@@ -1,7 +1,7 @@
 /*
  * Adapted from the Wizardry License
  *
- * Copyright (c) 2018-2018 DaPorkchop_ and contributors
+ * Copyright (c) 2018-2019 DaPorkchop_ and contributors
  *
  * Permission is hereby granted to any persons and/or organizations using this software to copy, modify, merge, publish, and distribute it. Said persons and/or organizations are not allowed to use the software or any derivatives of the work for commercial use or any other means to generate income, nor are they allowed to claim this software as their own.
  *
@@ -24,8 +24,8 @@ import net.daporkchop.lib.minecraft.world.Column;
  * @author DaPorkchop_
  */
 public class BlockRangeModule extends BlockModule {
-    private int minY = 0;
-    private int maxY = 255;
+    protected int minY = 0;
+    protected int maxY = 255;
 
     public BlockRangeModule(String[] args) {
         for (String s : args) {
@@ -80,9 +80,11 @@ public class BlockRangeModule extends BlockModule {
 
     @Override
     public void handle(long current, long estimatedTotal, Column column) {
+        int maxY = this.maxY;
+        int minY = this.minY; //allow JVM to inline into registers
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                for (int y = this.maxY; y >= this.minY; y--) {
+                for (int y = maxY; y >= minY; y--) {
                     this.checkAndAddPos(x, y, z, column);
                 }
             }

@@ -15,48 +15,49 @@
 
 package net.daporkchop.savesearcher.module;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
+import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Column;
-import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.SearchModule;
 
 /**
  * @author DaPorkchop_
  */
-public class SignModule extends SearchModule.BasePosSearchModule {
-    public SignModule(String[] args) {
-    }
-
-    @Override
-    public void init(World world) {
+public class InverseBlockModule extends BlockModule {
+    public InverseBlockModule(String[] args) {
+        super(args);
     }
 
     @Override
     public void handle(long current, long estimatedTotal, Column column) {
-        column.getTileEntities().stream()
-                .filter(TileEntitySign.class::isInstance)
-                .map(TileEntitySign.class::cast)
-                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), te.getLine1(), te.getLine2(), te.getLine3(), te.getLine4()));
-    }
-
-    @Override
-    protected JsonObject getObject(int x, int y, int z, Object... args) {
-        JsonObject object = super.getObject(x, y, z, args);
-        object.addProperty("line1", (String) args[0]);
-        object.addProperty("line2", (String) args[1]);
-        object.addProperty("line3", (String) args[2]);
-        object.addProperty("line4", (String) args[3]);
-        return object;
+        for (int x = 15; x >= 0; x--) {
+            for (int z = 15; z >= 0; z--) {
+                for (int y = 255; y >= 0; y--) {
+                    if (this.check(x, y, z, column))    {
+                        return; //if block matches, break out
+                    }
+                }
+            }
+        }
+        synchronized (this.values)  {
+            this.values.add(createElement(column));
+        }
     }
 
     @Override
     public String toString() {
-        return "Signs";
+        return String.format("Block - Inverted (id=%s, meta=%d)", this.searchName.toString(), this.meta);
     }
 
     @Override
     public String getSaveFormat() {
-        return "sign";
+        return "block_inverted";
+    }
+
+    static JsonObject createElement(Column column)  {
+        JsonObject object = new JsonObject();
+        object.addProperty("chunkX", column.getX());
+        object.addProperty("chunkZ", column.getZ());
+        return object;
     }
 }

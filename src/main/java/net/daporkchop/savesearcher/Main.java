@@ -1,7 +1,7 @@
 /*
  * Adapted from the Wizardry License
  *
- * Copyright (c) 2018-2018 DaPorkchop_ and contributors
+ * Copyright (c) 2018-2019 DaPorkchop_ and contributors
  *
  * Permission is hereby granted to any persons and/or organizations using this software to copy, modify, merge, publish, and distribute it. Said persons and/or organizations are not allowed to use the software or any derivatives of the work for commercial use or any other means to generate income, nor are they allowed to claim this software as their own.
  *
@@ -22,6 +22,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.daporkchop.lib.binary.UTF8;
 import net.daporkchop.lib.http.SimpleHTTP;
+import net.daporkchop.lib.logging.LogAmount;
+import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
@@ -31,6 +33,8 @@ import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.BlockModule;
 import net.daporkchop.savesearcher.module.BlockRangeModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
+import net.daporkchop.savesearcher.module.InverseBlockModule;
+import net.daporkchop.savesearcher.module.InverseBlockRangeModule;
 import net.daporkchop.savesearcher.module.JourneymapModule;
 import net.daporkchop.savesearcher.module.SignModule;
 
@@ -50,19 +54,27 @@ import java.util.function.Function;
 /**
  * @author DaPorkchop_
  */
-public class Main {
+public class Main implements Logging {
     private static final Map<String, Function<String[], SearchModule>> registeredModules = new Hashtable<>();
 
     static {
-        registeredModules.put("--block", BlockModule::new);
-        registeredModules.put("--sign", SignModule::new);
-        registeredModules.put("--doublechest", DoubleChestModule::new);
         registeredModules.put("--avgheight", AvgHeightModule::new);
+        registeredModules.put("--block", BlockModule::new);
         registeredModules.put("--blockinrange", BlockRangeModule::new);
+        registeredModules.put("--doublechest", DoubleChestModule::new);
+        registeredModules.put("--invertblock", InverseBlockModule::new);
+        registeredModules.put("--invertblockinrange", InverseBlockRangeModule::new);
         registeredModules.put("--journeymap", JourneymapModule::new);
+        registeredModules.put("--sign", SignModule::new);
     }
 
     public static void main(String... args) throws IOException {
+        logger.enableANSI().setLogAmount(LogAmount.DEBUG);
+        Thread.currentThread().setUncaughtExceptionHandler((thread, ex) -> {
+            logger.alert(ex);
+            System.exit(1);
+        });
+
         String versionName;
         {
             JsonParser parser = new JsonParser();
@@ -75,23 +87,20 @@ public class Main {
                 int localVersion = Integer.parseInt(local.get("versionNew").getAsString().replaceAll("_", ""));
                 int remoteVersion = Integer.parseInt(remote.get("versionNew").getAsString().replaceAll("_", ""));
                 if (localVersion < remoteVersion) {
-                    System.out.printf(
-                            "Outdated version! You're still on %s, but the latest version is %s.\n",
+                    logger.alert(
+                            "Outdated version! You're still on %s, but the latest version is %s.\nDownload the latest version from https://github.com/DaMatrix/SaveSearcher.\n\nScanner will start in 5 seconds...",
                             local.get("nameNew").getAsString().replaceAll(" ", ""),
                             remote.get("nameNew").getAsString().replaceAll(" ", "")
                     );
-                    System.out.println("Download the latest version from https://github.com/DaMatrix/SaveSearcher");
-                    System.out.println("Scanner will start in 5 seconds...");
                     try {
                         Thread.sleep(5000L);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 }
-            } catch (Throwable t)   {
+            } catch (Throwable t) {
                 t.printStackTrace();
-                System.out.println();
-                System.out.println("Version check failed, ignoring");
+                logger.warn("Version check failed, ignoring");
             }
             versionName = local.get("nameNew").getAsString().replaceAll(" ", "");
         }
@@ -101,47 +110,50 @@ public class Main {
         boolean verbose = false;
         boolean prettyPrintJson = false;
         Collection<SearchModule> modules = new ArrayDeque<>();
-        System.out.printf("SaveSearcher v%s\n", versionName);
-        System.out.println("Copyright (c) DaPorkchop_");
-        System.out.println("https://github.com/DaMatrix/SaveSearcher");
+        logger.info("SaveSearcher v%s", versionName)
+                .info("Copyright (c) DaPorkchop_")
+                .info("https://github.com/DaMatrix/SaveSearcher");
         if (args.length == 0
                 || contains(args, "-h")
                 || contains(args, "--help")
                 || contains(args, "--h")
-                || contains(args, "-help"))   {
-            System.out.println();
-            System.out.println("--input=<path>                          Sets the input world path (required)");
-            System.out.println("--dim=<dimension id>                    Sets the dimension (world) id to scan. default=0");
-            System.out.println("--verbose                               Print status updates to console");
-            System.out.println("--prettyPrintJson                       Makes the output json data be formatted");
-            System.out.println("--output=<path>                         Set the file that output data will be written to. default=./scanresult.json");
-            System.out.println();
-            System.out.println("MODULES");
-            System.out.println("--block,id=<id>(,meta=<meta>)           Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.");
-            System.out.println("--sign                                  Scan for sign blocks, saving coordinates and text.");
-            System.out.println("--doublechest                           Scan for double chests, saving coordinates and whether or not they're trapped.");
-            System.out.println("                                          WARNING! Can cause significant slowdown!");
-            System.out.println("--avgheight                             Calculate and save the average terrain height of the world");
-            System.out.println("--blockinrange,id=<id>(,meta=<meta>)    Scan for a certain block id+meta in a given vertical range, saving coordinates. Both min and max");
-            System.out.println("              (,min=<min>)(,max=<max>)  values are inclusive. defaults: min=0, max=255");
-            System.out.println("--journeymap,root=<path>                Generate waypoint files for JourneyMap in the given output directory. Waypoints for each module will be placed in their own subdirectory.");
+                || contains(args, "-help")) {
+            logger.info()
+                    .info("--input=<path>                               Sets the input world path (required)")
+                    .info("--dim=<dimension id>                         Sets the dimension (world) id to scan. default=0")
+                    .info("--verbose                                    Print status updates to console")
+                    .info("--prettyPrintJson                            Makes the output json data be formatted")
+                    .info("--output=<path>                              Set the file that output data will be written to. default=./scanresult.json")
+                    .info()
+                    .info("MODULES")
+                    .info("--avgheight                                   Calculate and save the average terrain height of the world")
+                    .info("--block,id=<id>(,meta=<meta>)                 Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.")
+                    .info("--blockinrange,id=<id>(,meta=<meta>)          Scan for a certain block id+meta in a given vertical range, saving coordinates. Both min and max")
+                    .info("              (,min=<min>)(,max=<max>)        values are inclusive. See --block. defaults: min=0, max=255")
+                    .info("--doublechest                                 Scan for double chests, saving coordinates and whether or not they're trapped.")
+                    .warn("                                                WARNING! Can cause significant slowdown!")
+                    .info("--invertblock,id=<id>(,meta=<meta>)           Scans for chunks that do not contain any of a certain block id+meta, saving chunk coordinates. See --block.")
+                    .info("--invertblockinrange,id=<id>(,meta=<meta>)    Scans for chunks that do not contain any of a certain block id+meta in a given vertical range, saving chunk coordinates. See --blockinrange.")
+                    .info("                    (,min=<min>)(,max=<max>)")
+                    .info("--journeymap,root=<path>                      Generate waypoint files for JourneyMap in the given output directory. Waypoints for each module will be placed in their own subdirectory.")
+                    .info("--sign                                        Scan for sign blocks, saving coordinates and text.");
             return;
         } else {
-            System.out.println("Starting...");
+            logger.info("Starting...");
         }
-        for (String s : args)   {
-            if (s.isEmpty())    {
+        for (String s : args) {
+            if (s.isEmpty()) {
                 continue;
             }
             String[] split = s.split("=");
-            switch (split[0])   {
+            switch (split[0]) {
                 case "--input":
-                case "-i":   {
+                case "-i": {
                     worldFile = new File(split[1]);
                 }
                 continue;
                 case "--output":
-                case "-o":   {
+                case "-o": {
                     outFile = new File(split[1]);
                 }
                 continue;
@@ -150,62 +162,63 @@ public class Main {
                 }
                 continue;
                 case "--verbose":
-                case "-v":  {
+                case "-v": {
                     verbose = true;
                 }
                 continue;
-                case "--prettyPrintJson":{
+                case "--prettyPrintJson": {
                     prettyPrintJson = true;
                 }
                 continue;
             }
             split = s.split(",");
             Function<String[], SearchModule> function = registeredModules.get(split[0]);
-            if (function == null)   {
+            if (function == null) {
                 throw new IllegalArgumentException(String.format("Invalid module: %s", split[0]));
             }
             modules.add(function.apply(s.replaceAll(split[0], "").replaceAll(split[0] + ",", "").split(",")));
         }
-        if (worldFile == null)  {
+        if (worldFile == null) {
             throw new IllegalArgumentException("World path not set!");
-        } else if (modules.isEmpty())   {
+        } else if (modules.isEmpty()) {
             throw new IllegalArgumentException("No modules enabled!");
         }
 
         Gson gson;
         {
             GsonBuilder builder = new GsonBuilder();
-            if (prettyPrintJson)    {
+            if (prettyPrintJson) {
                 builder.setPrettyPrinting();
             }
             gson = builder.create();
         }
 
-        System.out.printf("Beginning scan of world %s with %d scan modules enabled.\nModules:\n", worldFile.getAbsolutePath(), modules.size());
-        modules.forEach(m -> System.out.printf("  %s\n", m.toString()));
+        logger.info("Beginning scan of world %s with %d modules enabled.", worldFile.getAbsolutePath(), modules.size())
+                .info("Modules:");
+        modules.forEach(m -> logger.info("  %s", m.toString()));
 
         long time = System.currentTimeMillis();
         AtomicLong count = new AtomicLong(0L);
         try (MinecraftSave save = new SaveBuilder().setFormat(new AnvilSaveFormat(worldFile)).build()) {
             World world = save.getWorld(dim);
-            if (world == null)  {
+            if (world == null) {
                 throw new IllegalArgumentException(String.format("Invalid world: %d", dim));
             }
             modules.forEach(m -> m.init(world));
-            WorldScanner scanner = new WorldScanner(world)  {
+            WorldScanner scanner = new WorldScanner(world) {
                 @Override
                 public WorldScanner addProcessor(ColumnProcessor processor) {
-                    if (processor instanceof ColumnProcessorNeighboring)    {
+                    if (processor instanceof ColumnProcessorNeighboring) {
                         return super.addProcessor((ColumnProcessorNeighboring) processor);
                     } else {
                         return super.addProcessor(processor);
                     }
                 }
             };
-            if (verbose)    {
+            if (verbose) {
                 scanner.addProcessor((current, estimatedTotal, column) -> {
-                    if ((column.getX() & 0x1F) == 31 && (column.getZ() & 0x1F) == 31)    {
-                        System.out.printf("Processing region (%d,%d), chunk %d/~%d (%.2f%%)\n", column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
+                    if ((column.getX() & 0x1F) == 31 && (column.getZ() & 0x1F) == 31) {
+                        logger.debug("Processing region (%d,%d), chunk %d/~%d (%.2f%%)", column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
                     }
                 });
             }
@@ -216,7 +229,7 @@ public class Main {
 
             modules.forEach(m -> m.beforeExit(modules, gson, world));
         }
-        System.out.println("Finished scan. Saving data...");
+        logger.info("Finished scan. Saving data...");
         try (OutputStream os = new FileOutputStream(outFile)) {
             JsonArray array = new JsonArray();
             modules.forEach(m -> {
@@ -229,10 +242,9 @@ public class Main {
             });
             os.write(gson.toJson(array).getBytes(UTF8.utf8));
         }
-        System.out.println("Done!");
         time = System.currentTimeMillis() - time;
-        System.out.printf(
-                "Scanned %d chunks in %dh:%dm:%ds\n",
+        logger.success("Done!").success(
+                "Scanned %d chunks in %dh:%dm:%ds",
                 count.get(),
                 time / (1000L * 60L * 60L),
                 time / (1000L * 60L) % 60,
@@ -241,8 +253,8 @@ public class Main {
     }
 
     private static boolean contains(String[] arr, String s) {
-        for (String s1 : arr)   {
-            if (s1.equalsIgnoreCase(s))  {
+        for (String s1 : arr) {
+            if (s1.equalsIgnoreCase(s)) {
                 return true;
             }
         }
