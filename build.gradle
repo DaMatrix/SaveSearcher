@@ -38,8 +38,6 @@ dependencies {
     compile "net.daporkchop.lib:logging:0.3.0-SNAPSHOT"
     compile "net.daporkchop.lib:minecraft-worldscanner:0.3.0-SNAPSHOT"
 
-    compile "io.netty:netty-buffer:4.1.36.Final"
-
     testCompile "junit:junit:4.12"
 }
 
