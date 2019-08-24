@@ -13,21 +13,33 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.block;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.SearchModule;
+
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * @author DaPorkchop_
  */
-public class BlockRangeModule extends BlockModule {
-    protected int minY = 0;
-    protected int maxY = 255;
+public class BlockModule extends SearchModule.BasePosSearchModule {
+    protected ResourceLocation searchName;
+    protected int meta = -1;
+    protected int id;
 
-    public BlockRangeModule(String[] args) {
+    public BlockModule(String[] args) {
         for (String s : args) {
             if (s.isEmpty()) {
                 continue;
@@ -48,56 +60,61 @@ public class BlockRangeModule extends BlockModule {
                     }
                 }
                 break;
-                case "min":
-                case "minY":{
-                    this.minY = Integer.parseInt(split[1]);
-                }
-                break;
-                case "max":
-                case "maxY":{
-                    this.maxY = Integer.parseInt(split[1]);
-                }
-                break;
                 default:
                     throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
             }
         }
         if (this.searchName == null) {
             throw new IllegalArgumentException("No id given!");
-        } else if (this.minY > this.maxY)   {
-            throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", this.minY, this.maxY));
+        }
+    }
+
+    protected BlockModule() {
+    }
+
+    @Override
+    public void init(World world) {
+        this.id = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(this.searchName);
+        if (this.id == -1)  {
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
         }
     }
 
     @Override
     public void saveData(JsonObject object, Gson gson) {
         super.saveData(object, gson);
-        JsonObject rangeObj = new JsonObject();
-        rangeObj.addProperty("min", this.minY);
-        rangeObj.addProperty("max", this.maxY);
-        object.add("range", rangeObj);
+        object.addProperty("id", this.searchName.toString());
+        object.addProperty("meta", this.meta);
     }
 
     @Override
     public void handle(long current, long estimatedTotal, Column column) {
-        int maxY = this.maxY;
-        int minY = this.minY; //allow JVM to inline into registers
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                for (int y = maxY; y >= minY; y--) {
+                for (int y = 255; y >= 0; y--) {
                     this.checkAndAddPos(x, y, z, column);
                 }
             }
         }
     }
 
-    @Override
-    public String toString() {
-        return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
+    protected void checkAndAddPos(int x, int y, int z, Column column)   {
+        if (this.check(x, y, z, column)) {
+            this.add(x + (column.getX() << 4), y, z + (column.getZ() << 4));
+        }
+    }
+
+    protected boolean check(int x, int y, int z, Column column) {
+        return column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta);
     }
 
     @Override
-    public String getSaveFormat() {
-        return "block_ranged";
+    public String toString() {
+        return String.format("Block (id=%s, meta=%d)", this.searchName.toString(), this.meta);
+    }
+
+    @Override
+    public String getSaveName() {
+        return "block";
     }
 }

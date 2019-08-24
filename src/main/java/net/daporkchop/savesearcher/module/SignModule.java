@@ -56,7 +56,7 @@ public class SignModule extends SearchModule.BasePosSearchModule {
     }
 
     @Override
-    public String getSaveFormat() {
+    public String getSaveName() {
         return "sign";
     }
 }

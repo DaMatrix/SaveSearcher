@@ -17,10 +17,8 @@ package net.daporkchop.savesearcher;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.daporkchop.lib.binary.UTF8;
 import net.daporkchop.lib.http.SimpleHTTP;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
@@ -30,11 +28,12 @@ import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.AvgHeightModule;
-import net.daporkchop.savesearcher.module.BlockModule;
-import net.daporkchop.savesearcher.module.BlockRangeModule;
+import net.daporkchop.savesearcher.module.block.BlockModule;
+import net.daporkchop.savesearcher.module.block.BlockRangeModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
-import net.daporkchop.savesearcher.module.InverseBlockModule;
-import net.daporkchop.savesearcher.module.InverseBlockRangeModule;
+import net.daporkchop.savesearcher.module.EmptyChunksModule;
+import net.daporkchop.savesearcher.module.block.InverseBlockModule;
+import net.daporkchop.savesearcher.module.block.InverseBlockRangeModule;
 import net.daporkchop.savesearcher.module.JourneymapModule;
 import net.daporkchop.savesearcher.module.NetherChunksModule;
 import net.daporkchop.savesearcher.module.SignModule;
@@ -43,7 +42,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -63,6 +62,7 @@ public class Main implements Logging {
         registeredModules.put("--block", BlockModule::new);
         registeredModules.put("--blockinrange", BlockRangeModule::new);
         registeredModules.put("--doublechest", DoubleChestModule::new);
+        registeredModules.put("--emptychunks", EmptyChunksModule::new);
         registeredModules.put("--invertblock", InverseBlockModule::new);
         registeredModules.put("--invertblockinrange", InverseBlockRangeModule::new);
         registeredModules.put("--journeymap", JourneymapModule::new);
@@ -71,7 +71,10 @@ public class Main implements Logging {
     }
 
     public static void main(String... args) throws IOException {
-        logger.enableANSI().setLogAmount(LogAmount.DEBUG);
+        logger.enableANSI()
+                .addFile(new File(String.format("savesearcher-%d.log", System.currentTimeMillis())).getAbsoluteFile(), true, LogAmount.DEBUG)
+                .setLogAmount(LogAmount.DEBUG);
+
         Thread.currentThread().setUncaughtExceptionHandler((thread, ex) -> {
             logger.alert(ex);
             System.exit(1);
@@ -233,22 +236,22 @@ public class Main implements Logging {
             modules.forEach(m -> m.beforeExit(modules, gson, world));
         }
         logger.info("Finished scan. Saving data...");
-        try (OutputStream os = new FileOutputStream(outFile)) {
-            JsonArray array = new JsonArray();
+        try (PrintStream out = new PrintStream(new FileOutputStream(outFile), false, "UTF-8")) {
+            JsonObject obj = new JsonObject();
             modules.forEach(m -> {
                 JsonObject object = new JsonObject();
-                object.addProperty("format", m.getSaveFormat());
+                object.addProperty("name", m.toString());
                 JsonObject subObject = new JsonObject();
                 object.add("data", subObject);
                 m.saveData(subObject, gson);
-                array.add(object);
+                obj.add(m.getSaveName(), object);
             });
-            os.write(gson.toJson(array).getBytes(UTF8.utf8));
+            gson.toJson(obj, out);
         }
         time = System.currentTimeMillis() - time;
         logger.success("Done!").success(
                 "Scanned %d chunks in %dh:%dm:%ds",
-                count.get(),
+                count.get() + 1,
                 time / (1000L * 60L * 60L),
                 time / (1000L * 60L) % 60,
                 time / (1000L) % 60

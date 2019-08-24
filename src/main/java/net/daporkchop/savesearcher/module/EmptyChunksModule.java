@@ -35,33 +35,34 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public class NetherChunksModule implements SearchModule {
+public class EmptyChunksModule implements SearchModule {
     protected final JsonArray values = new JsonArray();
-    protected int bedrock_id;
 
-    public NetherChunksModule(String[] args) {
+    public EmptyChunksModule(String[] args) {
     }
 
     @Override
     public void init(World world) {
-        this.bedrock_id = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:bedrock"));
     }
 
     @Override
     public void handle(long current, long estimatedTotal, @NonNull Column column) {
-        final int id = this.bedrock_id;
-        final Chunk chunk = column.getChunk(7);
-        if (chunk == null)  {
-            return;
-        }
-        for (int x = 15; x >= 0; x--)   {
-            for (int z = 15; z >= 0; z--)   {
-                if (chunk.getBlockId(x, 15, z) == id)   {
-                    this.add(column);
-                    return;
+        for (int chunkY = 0; chunkY < 15; chunkY++)    { //go from bottom chunk to top as it's more likely to find blocks on the bottom
+            final Chunk chunk = column.getChunk(chunkY);
+            if (chunk == null)  {
+                continue;
+            }
+            for (int x = 15; x >= 0; x--)   {
+                for (int y = 15; y >= 0; y--) {
+                    for (int z = 15; z >= 0; z--) {
+                        if (chunk.getBlockId(x, y, z) != 0) {
+                            return;
+                        }
+                    }
                 }
             }
         }
+        this.add(column);
     }
 
     protected void add(@NonNull Column column)  {
@@ -90,11 +91,11 @@ public class NetherChunksModule implements SearchModule {
 
     @Override
     public String getSaveName() {
-        return "nether_chunks";
+        return "empty_chunks";
     }
 
     @Override
     public String toString() {
-        return "Nether Chunks";
+        return "Empty Chunks";
     }
 }

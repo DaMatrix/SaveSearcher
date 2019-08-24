@@ -13,11 +13,9 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.block;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Column;
 
 /**
@@ -50,7 +48,7 @@ public class InverseBlockModule extends BlockModule {
     }
 
     @Override
-    public String getSaveFormat() {
+    public String getSaveName() {
         return "block_inverted";
     }
 
