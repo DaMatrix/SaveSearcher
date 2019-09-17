@@ -22,6 +22,7 @@ import com.google.gson.JsonParser;
 import net.daporkchop.lib.http.SimpleHTTP;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
+import net.daporkchop.lib.math.vector.i.Vec2i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
@@ -46,8 +47,11 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -205,6 +209,7 @@ public class Main implements Logging {
 
         long time = System.currentTimeMillis();
         AtomicLong count = new AtomicLong(0L);
+        Set<Vec2i> regionPositions = Collections.newSetFromMap(new ConcurrentHashMap<>());
         try (MinecraftSave save = new SaveBuilder().setFormat(new AnvilSaveFormat(worldFile)).build()) {
             World world = save.getWorld(dim);
             if (world == null) {
@@ -223,8 +228,8 @@ public class Main implements Logging {
             };
             if (verbose) {
                 scanner.addProcessor((current, estimatedTotal, column) -> {
-                    if ((column.getX() & 0x1F) == 31 && (column.getZ() & 0x1F) == 31) {
-                        logger.debug("Processing region (%d,%d), chunk %d/~%d (%.2f%%)", column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
+                    if (regionPositions.add(new Vec2i(column.getX() >> 5, column.getZ() >> 5))) {
+                        logger.debug("Processing region #%d (%d,%d), chunk %d/~%d (%.2f%%)", regionPositions.size(), column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
                     }
                 });
             }
@@ -250,8 +255,9 @@ public class Main implements Logging {
         }
         time = System.currentTimeMillis() - time;
         logger.success("Done!").success(
-                "Scanned %d chunks in %dh:%dm:%ds",
+                "Scanned %d chunks (across %d regions) in %dh:%dm:%ds",
                 count.get() + 1,
+                regionPositions.size(),
                 time / (1000L * 60L * 60L),
                 time / (1000L * 60L) % 60,
                 time / (1000L) % 60
