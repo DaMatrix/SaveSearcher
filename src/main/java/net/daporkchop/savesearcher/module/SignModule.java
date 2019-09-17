@@ -16,6 +16,7 @@
 package net.daporkchop.savesearcher.module;
 
 import com.google.gson.JsonObject;
+import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
@@ -25,11 +26,16 @@ import net.daporkchop.savesearcher.SearchModule;
  * @author DaPorkchop_
  */
 public class SignModule extends SearchModule.BasePosSearchModule {
+    protected int standing_sign;
+    protected int wall_sign;
+
     public SignModule(String[] args) {
     }
 
     @Override
     public void init(World world) {
+        this.standing_sign = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:standing_sign"));
+        this.wall_sign = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:wall_sign"));
     }
 
     @Override
@@ -37,16 +43,97 @@ public class SignModule extends SearchModule.BasePosSearchModule {
         column.getTileEntities().stream()
                 .filter(TileEntitySign.class::isInstance)
                 .map(TileEntitySign.class::cast)
-                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), te.getLine1(), te.getLine2(), te.getLine3(), te.getLine4()));
+                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), column, te.getLine1(), te.getLine2(), te.getLine3(), te.getLine4()));
     }
 
     @Override
     protected JsonObject getObject(int x, int y, int z, Object... args) {
         JsonObject object = super.getObject(x, y, z, args);
-        object.addProperty("line1", (String) args[0]);
-        object.addProperty("line2", (String) args[1]);
-        object.addProperty("line3", (String) args[2]);
-        object.addProperty("line4", (String) args[3]);
+
+        object.addProperty("line1", (String) args[1]);
+        object.addProperty("line2", (String) args[2]);
+        object.addProperty("line3", (String) args[3]);
+        object.addProperty("line4", (String) args[4]);
+
+        int id = ((Column) args[0]).getBlockId(x, y, z);
+        int meta = ((Column) args[0]).getBlockMeta(x, y, z);
+        if (id == this.standing_sign)   {
+            object.addProperty("type", "standing_sign");
+            String dir = "unknown";
+            switch (meta)   {
+                case 0:
+                    dir = "south";
+                    break;
+                case 1:
+                    dir = "south-southwest";
+                    break;
+                case 2:
+                    dir = "southwest";
+                    break;
+                case 3:
+                    dir = "west-southwest";
+                    break;
+                case 4:
+                    dir = "west";
+                    break;
+                case 5:
+                    dir = "west-northwest";
+                    break;
+                case 6:
+                    dir = "northwest";
+                    break;
+                case 7:
+                    dir = "north-northwest";
+                    break;
+                case 8:
+                    dir = "north";
+                    break;
+                case 9:
+                    dir = "north-northeast";
+                    break;
+                case 10:
+                    dir = "northeast";
+                    break;
+                case 11:
+                    dir = "east-northeast";
+                    break;
+                case 12:
+                    dir = "east";
+                    break;
+                case 13:
+                    dir = "east-southeast";
+                    break;
+                case 14:
+                    dir = "southeast";
+                    break;
+                case 15:
+                    dir = "south-southeast";
+                    break;
+            }
+            object.addProperty("direction", dir);
+        } else if (id == this.wall_sign)    {
+            object.addProperty("type", "wall_sign");
+            String dir = "unknown";
+            switch (meta)   {
+                case 2:
+                    dir = "north";
+                    break;
+                case 3:
+                    dir = "south";
+                    break;
+                case 4:
+                    dir = "west";
+                    break;
+                case 5:
+                    dir = "east";
+                    break;
+            }
+            object.addProperty("direction", dir);
+        } else {
+            object.addProperty("type", String.format("invalid_id_%d", id));
+            object.addProperty("direction", "unknown");
+        }
+
         return object;
     }
 
