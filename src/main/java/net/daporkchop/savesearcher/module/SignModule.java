@@ -55,8 +55,8 @@ public class SignModule extends SearchModule.BasePosSearchModule {
         object.addProperty("line3", (String) args[3]);
         object.addProperty("line4", (String) args[4]);
 
-        int id = ((Column) args[0]).getBlockId(x, y, z);
-        int meta = ((Column) args[0]).getBlockMeta(x, y, z);
+        int id = ((Column) args[0]).getBlockId(x & 0xF, y & 0xF, z & 0xF);
+        int meta = ((Column) args[0]).getBlockMeta(x & 0xF, y & 0xF, z & 0xF);
         if (id == this.standing_sign)   {
             object.addProperty("type", "standing_sign");
             String dir = "unknown";
