@@ -16,7 +16,9 @@
 package net.daporkchop.savesearcher.module;
 
 import com.google.gson.JsonObject;
+import net.daporkchop.lib.logging.format.FormatParser;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
+import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
@@ -26,6 +28,8 @@ import net.daporkchop.savesearcher.SearchModule;
  * @author DaPorkchop_
  */
 public class SignModule extends SearchModule.BasePosSearchModule {
+    protected static final FormatParser PARSER = new MinecraftFormatParser();
+
     protected int standing_sign;
     protected int wall_sign;
 
@@ -50,13 +54,13 @@ public class SignModule extends SearchModule.BasePosSearchModule {
     protected JsonObject getObject(int x, int y, int z, Object... args) {
         JsonObject object = super.getObject(x, y, z, args);
 
-        object.addProperty("line1", (String) args[1]);
-        object.addProperty("line2", (String) args[2]);
-        object.addProperty("line3", (String) args[3]);
-        object.addProperty("line4", (String) args[4]);
+        object.addProperty("line1", PARSER.parse(args[1].toString()).toRawString());
+        object.addProperty("line2", PARSER.parse(args[2].toString()).toRawString());
+        object.addProperty("line3", PARSER.parse(args[3].toString()).toRawString());
+        object.addProperty("line4", PARSER.parse(args[4].toString()).toRawString());
 
-        int id = ((Column) args[0]).getBlockId(x & 0xF, y & 0xF, z & 0xF);
-        int meta = ((Column) args[0]).getBlockMeta(x & 0xF, y & 0xF, z & 0xF);
+        int id = ((Column) args[0]).getBlockId(x & 0xF, y, z & 0xF);
+        int meta = ((Column) args[0]).getBlockMeta(x & 0xF, y, z & 0xF);
         if (id == this.standing_sign)   {
             object.addProperty("type", "standing_sign");
             String dir = "unknown";
