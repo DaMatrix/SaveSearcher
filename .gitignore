@@ -7,6 +7,6 @@ target/
 build/
 out/
 
-/scanresult.json
+*.log
 
-/src/main/java/net/daporkchop/savesearcher/test/*.java
+/scanresult.json

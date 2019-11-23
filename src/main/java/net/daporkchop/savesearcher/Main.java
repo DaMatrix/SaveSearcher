@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.daporkchop.lib.http.SimpleHTTP;
+import net.daporkchop.lib.http.Http;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.math.vector.i.Vec2i;
@@ -29,15 +29,15 @@ import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.AvgHeightModule;
-import net.daporkchop.savesearcher.module.block.BlockModule;
-import net.daporkchop.savesearcher.module.block.BlockRangeModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
 import net.daporkchop.savesearcher.module.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.block.InverseBlockModule;
-import net.daporkchop.savesearcher.module.block.InverseBlockRangeModule;
 import net.daporkchop.savesearcher.module.JourneymapModule;
 import net.daporkchop.savesearcher.module.NetherChunksModule;
 import net.daporkchop.savesearcher.module.SignModule;
+import net.daporkchop.savesearcher.module.block.BlockModule;
+import net.daporkchop.savesearcher.module.block.BlockRangeModule;
+import net.daporkchop.savesearcher.module.block.InverseBlockModule;
+import net.daporkchop.savesearcher.module.block.InverseBlockRangeModule;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -48,7 +48,7 @@ import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,7 +59,7 @@ import java.util.function.Function;
  * @author DaPorkchop_
  */
 public class Main implements Logging {
-    private static final Map<String, Function<String[], SearchModule>> registeredModules = new Hashtable<>();
+    private static final Map<String, Function<String[], SearchModule>> registeredModules = new HashMap<>();
 
     static {
         registeredModules.put("--avgheight", AvgHeightModule::new);
@@ -75,9 +75,7 @@ public class Main implements Logging {
     }
 
     public static void main(String... args) throws IOException {
-        logger.enableANSI()
-                .addFile(new File(String.format("savesearcher-%d.log", System.currentTimeMillis())).getAbsoluteFile(), true, LogAmount.DEBUG)
-                .setLogAmount(LogAmount.DEBUG);
+        logger.enableANSI().setLogAmount(LogAmount.DEBUG);
 
         Thread.currentThread().setUncaughtExceptionHandler((thread, ex) -> {
             logger.alert(ex);
@@ -92,7 +90,7 @@ public class Main implements Logging {
                 local = parser.parse(reader).getAsJsonObject();
             }
             try {
-                JsonObject remote = parser.parse(SimpleHTTP.getString("https://raw.githubusercontent.com/DaMatrix/SaveSearcher/master/src/main/resources/version.json")).getAsJsonObject();
+                JsonObject remote = parser.parse(Http.getString("https://raw.githubusercontent.com/DaMatrix/SaveSearcher/master/src/main/resources/version.json")).getAsJsonObject();
                 int localVersion = Integer.parseInt(local.get("versionNew").getAsString().replaceAll("_", ""));
                 int remoteVersion = Integer.parseInt(remote.get("versionNew").getAsString().replaceAll("_", ""));
                 if (localVersion < remoteVersion) {
@@ -119,15 +117,15 @@ public class Main implements Logging {
         boolean verbose = false;
         boolean prettyPrintJson = false;
         Collection<SearchModule> modules = new ArrayDeque<>();
-        logger.info("SaveSearcher v%s", versionName)
-                .info("Copyright (c) DaPorkchop_")
-                .info("https://github.com/DaMatrix/SaveSearcher");
         if (args.length == 0
                 || contains(args, "-h")
                 || contains(args, "--help")
                 || contains(args, "--h")
                 || contains(args, "-help")) {
-            logger.info("")
+            logger.info("SaveSearcher v%s", versionName)
+                    .info("Copyright (c) DaPorkchop_")
+                    .info("https://github.com/DaMatrix/SaveSearcher")
+                    .info("")
                     .info("--input=<path>                               Sets the input world path (required)")
                     .info("--dim=<dimension id>                         Sets the dimension (world) id to scan. default=0")
                     .info("--verbose                                    Print status updates to console")
@@ -146,10 +144,16 @@ public class Main implements Logging {
                     .info("                    (,min=<min>)(,max=<max>)")
                     .info("--journeymap,root=<path>                      Generate waypoint files for JourneyMap in the given output directory. Waypoints for each module will be placed in their own subdirectory.")
                     .info("--netherchunks                                Scan for nether chunks that have somehow ended up in the overworld.")
+                    .info("--emptychunks                                 Scan for empty (air-only) chunks.")
                     .info("--sign                                        Scan for sign blocks, saving coordinates and text.");
             return;
         } else {
-            logger.info("Starting...");
+            logger.addFile(new File(String.format("savesearcher-%d.log", System.currentTimeMillis())).getAbsoluteFile(), true, LogAmount.DEBUG)
+                    .info("SaveSearcher v%s", versionName)
+                    .info("Copyright (c) DaPorkchop_")
+                    .info("https://github.com/DaMatrix/SaveSearcher")
+                    .info("")
+                    .info("Starting...");
         }
         for (String s : args) {
             if (s.isEmpty()) {
@@ -168,6 +172,7 @@ public class Main implements Logging {
                 }
                 continue;
                 case "--dim": {
+                    if (true) throw new UnsupportedOperationException("--dim option is currently unsupported!");
                     dim = Integer.parseInt(split[1]);
                 }
                 continue;

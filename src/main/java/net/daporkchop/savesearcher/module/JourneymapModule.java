@@ -18,7 +18,6 @@ package net.daporkchop.savesearcher.module;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.binary.UTF8;
 import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
@@ -29,6 +28,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -122,7 +122,7 @@ public class JourneymapModule implements SearchModule {
                             object.addProperty("origin", "journeymap");
                             object.add("dimensions", dimensionsArray);
                             object.addProperty("persistent", true);
-                            os.write(gson.toJson(object).getBytes(UTF8.utf8));
+                            os.write(gson.toJson(object).getBytes(StandardCharsets.UTF_8));
                         }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
