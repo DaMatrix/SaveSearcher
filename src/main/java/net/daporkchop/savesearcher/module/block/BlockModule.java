@@ -107,4 +107,23 @@ public class BlockModule extends SearchModule.BasePosSearchModule {
     public String getSaveName() {
         return "block";
     }
+
+    @Override
+    public int hashCode() {
+        //id is only computed later and can change dynamically, so we don't want to include it in the hash code
+        return this.searchName.hashCode() * 31 + this.meta;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)     {
+            return true;
+        } else if (obj.getClass() == BlockModule.class) {
+            //don't do instanceof check, since we only want to check if the modules are exactly identical
+            BlockModule other = (BlockModule) obj;
+            return this.searchName.equals(other.searchName) && this.meta == other.meta;
+        } else {
+            return false;
+        }
+    }
 }

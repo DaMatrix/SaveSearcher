@@ -20,7 +20,7 @@ import net.daporkchop.lib.minecraft.world.Column;
 /**
  * @author DaPorkchop_
  */
-public class InverseBlockRangeModule extends BlockRangeModule {
+public final class InverseBlockRangeModule extends BlockRangeModule {
     public InverseBlockRangeModule(String[] args) {
         super(args);
     }
@@ -51,5 +51,17 @@ public class InverseBlockRangeModule extends BlockRangeModule {
     @Override
     public String getSaveName() {
         return "block_inverted_ranged";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)    {
+            return true;
+        } else if (obj.getClass() == InverseBlockRangeModule.class)    {
+            InverseBlockRangeModule other = (InverseBlockRangeModule) obj;
+            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
+        } else {
+            return false;
+        }
     }
 }

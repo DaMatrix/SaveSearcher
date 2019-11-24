@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author DaPorkchop_
  */
-public class JourneymapModule implements SearchModule {
+public final class JourneymapModule implements SearchModule {
     protected File rootDir;
 
     public JourneymapModule(String[] args) {
@@ -157,6 +157,23 @@ public class JourneymapModule implements SearchModule {
             }
         } else {
             file.delete();
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return this.rootDir.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)    {
+            return true;
+        } else if (obj instanceof JourneymapModule) {
+            JourneymapModule other = (JourneymapModule) obj;
+            return this.rootDir.getAbsoluteFile().equals(other.rootDir.getAbsoluteFile());
+        } else {
+            return false;
         }
     }
 }

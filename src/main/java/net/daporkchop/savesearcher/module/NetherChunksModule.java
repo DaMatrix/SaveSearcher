@@ -34,7 +34,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public class NetherChunksModule implements SearchModule {
+public final class NetherChunksModule implements SearchModule {
     protected final JsonArray values = new JsonArray();
     protected int bedrock_id;
 
@@ -95,5 +95,15 @@ public class NetherChunksModule implements SearchModule {
     @Override
     public String toString() {
         return "Nether Chunks";
+    }
+
+    @Override
+    public int hashCode() {
+        return NetherChunksModule.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof NetherChunksModule;
     }
 }

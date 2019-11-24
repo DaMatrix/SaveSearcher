@@ -33,7 +33,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public class DoubleChestModule extends SearchModule.BasePosSearchModule implements WorldScanner.ColumnProcessorNeighboring {
+public final class DoubleChestModule extends SearchModule.BasePosSearchModule implements WorldScanner.ColumnProcessorNeighboring {
     private int chestId;
     private int trappedChestId;
 
@@ -83,5 +83,15 @@ public class DoubleChestModule extends SearchModule.BasePosSearchModule implemen
     @Override
     public String getSaveName() {
         return "double_chest";
+    }
+
+    @Override
+    public int hashCode() {
+        return DoubleChestModule.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof DoubleChestModule;
     }
 }

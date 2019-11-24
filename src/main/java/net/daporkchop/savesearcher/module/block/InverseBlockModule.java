@@ -21,7 +21,14 @@ import net.daporkchop.lib.minecraft.world.Column;
 /**
  * @author DaPorkchop_
  */
-public class InverseBlockModule extends BlockModule {
+public final class InverseBlockModule extends BlockModule {
+    static JsonObject createElement(Column column) {
+        JsonObject object = new JsonObject();
+        object.addProperty("chunkX", column.getX());
+        object.addProperty("chunkZ", column.getZ());
+        return object;
+    }
+
     public InverseBlockModule(String[] args) {
         super(args);
     }
@@ -31,13 +38,13 @@ public class InverseBlockModule extends BlockModule {
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = 255; y >= 0; y--) {
-                    if (this.check(x, y, z, column))    {
+                    if (this.check(x, y, z, column)) {
                         return; //if block matches, break out
                     }
                 }
             }
         }
-        synchronized (this.values)  {
+        synchronized (this.values) {
             this.values.add(createElement(column));
         }
     }
@@ -52,10 +59,15 @@ public class InverseBlockModule extends BlockModule {
         return "block_inverted";
     }
 
-    static JsonObject createElement(Column column)  {
-        JsonObject object = new JsonObject();
-        object.addProperty("chunkX", column.getX());
-        object.addProperty("chunkZ", column.getZ());
-        return object;
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (obj.getClass() == InverseBlockModule.class) {
+            InverseBlockModule other = (InverseBlockModule) obj;
+            return this.searchName.equals(other.searchName) && this.meta == other.meta;
+        } else {
+            return false;
+        }
     }
 }

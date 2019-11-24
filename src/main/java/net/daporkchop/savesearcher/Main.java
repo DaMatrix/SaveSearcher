@@ -193,7 +193,12 @@ public class Main implements Logging {
             if (function == null) {
                 throw new IllegalArgumentException(String.format("Invalid module: %s", split[0]));
             }
-            modules.add(function.apply(s.replaceAll(split[0], "").replaceAll(split[0] + ",", "").split(",")));
+            SearchModule module = function.apply(s.replaceAll(split[0], "").replaceAll(split[0] + ",", "").split(","));
+            if (modules.contains(module))   {
+                logger.warn("Duplicate argument: \"%s\"!", s);
+            } else {
+                modules.add(module);
+            }
         }
         if (worldFile == null) {
             throw new IllegalArgumentException("World path not set!");

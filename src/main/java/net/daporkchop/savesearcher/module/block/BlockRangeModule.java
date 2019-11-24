@@ -99,4 +99,21 @@ public class BlockRangeModule extends BlockModule {
     public String getSaveName() {
         return "block_ranged";
     }
+
+    @Override
+    public int hashCode() {
+        return (super.hashCode() * 31 + this.maxY) * 31 + this.minY;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)    {
+            return true;
+        } else if (obj.getClass() == BlockRangeModule.class)    {
+            BlockRangeModule other = (BlockRangeModule) obj;
+            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
+        } else {
+            return false;
+        }
+    }
 }

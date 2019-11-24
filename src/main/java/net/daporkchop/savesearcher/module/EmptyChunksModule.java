@@ -33,7 +33,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public class EmptyChunksModule implements SearchModule {
+public final class EmptyChunksModule implements SearchModule {
     protected final JsonArray values = new JsonArray();
 
     public EmptyChunksModule(String[] args) {
@@ -95,5 +95,15 @@ public class EmptyChunksModule implements SearchModule {
     @Override
     public String toString() {
         return "Empty Chunks";
+    }
+
+    @Override
+    public int hashCode() {
+        return EmptyChunksModule.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof EmptyChunksModule;
     }
 }

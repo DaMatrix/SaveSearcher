@@ -18,6 +18,7 @@ package net.daporkchop.savesearcher.module;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.lib.unsafe.PUnsafe;
 import net.daporkchop.savesearcher.SearchModule;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,32 +26,36 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author DaPorkchop_
  */
-public class AvgHeightModule implements SearchModule {
-    private final AtomicLong totalHeight = new AtomicLong(0L);
-    private final AtomicLong totalCount = new AtomicLong(0L);
+public final class AvgHeightModule implements SearchModule {
+    protected static final long HEIGHT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "height");
+    protected static final long COUNT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "count");
+
+    private volatile long height = 0L;
+    private volatile long count = 0L;
 
     public AvgHeightModule(String[] args) {
     }
 
     @Override
     public void init(World world) {
-        this.totalHeight.set(0L);
-        this.totalCount.set(0L);
+        this.height = this.count = 0L;
     }
 
     @Override
     public void saveData(JsonObject object) {
-        object.addProperty("height", (double) this.totalHeight.get() / (double) this.totalCount.get());
+        object.addProperty("height", (double) this.height / (double) this.count);
     }
 
     @Override
     public void handle(long current, long estimatedTotal, Column column) {
-        this.totalCount.addAndGet(256L);
+        PUnsafe.getAndAddLong(this, COUNT_OFFSET, 256L);
+        int c = 0;
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                this.totalHeight.addAndGet(column.getHighestBlock(x, z));
+                c += column.getHighestBlock(x, z);
             }
         }
+        PUnsafe.getAndAddLong(this, HEIGHT_OFFSET, c);
     }
 
     @Override
@@ -61,5 +66,15 @@ public class AvgHeightModule implements SearchModule {
     @Override
     public String getSaveName() {
         return "average_height";
+    }
+
+    @Override
+    public int hashCode() {
+        return AvgHeightModule.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof AvgHeightModule;
     }
 }

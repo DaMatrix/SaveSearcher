@@ -27,7 +27,7 @@ import net.daporkchop.savesearcher.SearchModule;
 /**
  * @author DaPorkchop_
  */
-public class SignModule extends SearchModule.BasePosSearchModule {
+public final class SignModule extends SearchModule.BasePosSearchModule {
     protected static final FormatParser PARSER = new MinecraftFormatParser();
 
     protected int standing_sign;
@@ -149,5 +149,15 @@ public class SignModule extends SearchModule.BasePosSearchModule {
     @Override
     public String getSaveName() {
         return "sign";
+    }
+
+    @Override
+    public int hashCode() {
+        return SignModule.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof SignModule;
     }
 }
