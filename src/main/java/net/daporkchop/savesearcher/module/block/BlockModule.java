@@ -15,21 +15,11 @@
 
 package net.daporkchop.savesearcher.module.block;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
-
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * @author DaPorkchop_
@@ -81,8 +71,8 @@ public class BlockModule extends SearchModule.BasePosSearchModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
-        super.saveData(object, gson);
+    public void saveData(JsonObject object) {
+        super.saveData(object);
         object.addProperty("id", this.searchName.toString());
         object.addProperty("meta", this.meta);
     }

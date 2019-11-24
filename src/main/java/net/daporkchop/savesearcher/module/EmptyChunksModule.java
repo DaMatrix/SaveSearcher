@@ -15,13 +15,11 @@
 
 package net.daporkchop.savesearcher.module;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.NonNull;
 import net.daporkchop.lib.math.vector.i.Vec3i;
-import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
@@ -85,7 +83,7 @@ public class EmptyChunksModule implements SearchModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
+    public void saveData(JsonObject object) {
         object.add("chunks", this.values);
     }
 

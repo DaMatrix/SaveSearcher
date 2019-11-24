@@ -15,7 +15,6 @@
 
 package net.daporkchop.savesearcher.module.block;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Column;
@@ -70,8 +69,8 @@ public class BlockRangeModule extends BlockModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
-        super.saveData(object, gson);
+    public void saveData(JsonObject object) {
+        super.saveData(object);
         JsonObject rangeObj = new JsonObject();
         rangeObj.addProperty("min", this.minY);
         rangeObj.addProperty("max", this.maxY);

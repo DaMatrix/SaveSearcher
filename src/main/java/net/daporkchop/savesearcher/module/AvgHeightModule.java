@@ -15,7 +15,6 @@
 
 package net.daporkchop.savesearcher.module;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.world.Column;
 import net.daporkchop.lib.minecraft.world.World;
@@ -40,7 +39,7 @@ public class AvgHeightModule implements SearchModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
+    public void saveData(JsonObject object) {
         object.addProperty("height", (double) this.totalHeight.get() / (double) this.totalCount.get());
     }
 

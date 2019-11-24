@@ -34,7 +34,7 @@ import java.util.stream.StreamSupport;
 public interface SearchModule extends WorldScanner.ColumnProcessor {
     void init(World world);
 
-    void saveData(JsonObject object, Gson gson);
+    void saveData(JsonObject object);
 
     String getSaveName();
 
@@ -49,7 +49,7 @@ public interface SearchModule extends WorldScanner.ColumnProcessor {
         protected final JsonArray values = new JsonArray();
 
         @Override
-        public void saveData(JsonObject object, Gson gson) {
+        public void saveData(JsonObject object) {
             object.add("values", this.values);
         }
 

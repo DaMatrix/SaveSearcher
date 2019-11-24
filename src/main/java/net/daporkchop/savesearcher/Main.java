@@ -17,6 +17,7 @@ package net.daporkchop.savesearcher;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.daporkchop.lib.http.Http;
@@ -46,6 +47,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -248,13 +250,19 @@ public class Main implements Logging {
         logger.info("Finished scan. Saving data...");
         try (PrintStream out = new PrintStream(new FileOutputStream(outFile), false, "UTF-8")) {
             JsonObject obj = new JsonObject();
-            modules.forEach(m -> {
-                JsonObject object = new JsonObject();
-                object.addProperty("name", m.toString());
-                JsonObject subObject = new JsonObject();
-                object.add("data", subObject);
-                m.saveData(subObject, gson);
-                obj.add(m.getSaveName(), object);
+            Map<String, Collection<SearchModule>> byName = new HashMap<>();
+            modules.forEach(m -> byName.computeIfAbsent(m.getSaveName(), n -> new ArrayList<>()).add(m));
+            byName.forEach((name, withName) -> {
+                JsonArray array = new JsonArray();
+                withName.forEach(m -> {
+                    JsonObject object = new JsonObject();
+                    object.addProperty("name", m.toString());
+                    JsonObject subObject = new JsonObject();
+                    object.add("data", subObject);
+                    m.saveData(subObject);
+                    array.add(object);
+                });
+                obj.add(name, array);
             });
             gson.toJson(obj, out);
         }

@@ -71,7 +71,7 @@ public class JourneymapModule implements SearchModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
+    public void saveData(JsonObject object) {
         object.addProperty("output", this.rootDir.getAbsolutePath());
     }
 

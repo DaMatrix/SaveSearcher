@@ -15,7 +15,6 @@
 
 package net.daporkchop.savesearcher.module;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -84,7 +83,7 @@ public class NetherChunksModule implements SearchModule {
     }
 
     @Override
-    public void saveData(JsonObject object, Gson gson) {
+    public void saveData(JsonObject object) {
         object.add("chunks", this.values);
     }
 
