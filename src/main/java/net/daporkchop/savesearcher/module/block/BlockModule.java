@@ -17,7 +17,7 @@ package net.daporkchop.savesearcher.module.block;
 
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
@@ -64,8 +64,8 @@ public class BlockModule extends SearchModule.BasePosSearchModule {
 
     @Override
     public void init(World world) {
-        this.id = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(this.searchName);
-        if (this.id == -1)  {
+        this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName);
+        if (this.id == -1) {
             throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
         }
     }
@@ -78,24 +78,24 @@ public class BlockModule extends SearchModule.BasePosSearchModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = 255; y >= 0; y--) {
-                    this.checkAndAddPos(x, y, z, column);
+                    this.checkAndAddPos(x, y, z, chunk);
                 }
             }
         }
     }
 
-    protected void checkAndAddPos(int x, int y, int z, Column column)   {
-        if (this.check(x, y, z, column)) {
-            this.add(x + (column.getX() << 4), y, z + (column.getZ() << 4));
+    protected void checkAndAddPos(int x, int y, int z, Chunk chunk) {
+        if (this.check(x, y, z, chunk)) {
+            this.add(x + (chunk.getX() << 4), y, z + (chunk.getZ() << 4));
         }
     }
 
-    protected boolean check(int x, int y, int z, Column column) {
-        return column.getBlockId(x, y, z) == this.id && (this.meta == -1 || column.getBlockMeta(x, y, z) == this.meta);
+    protected boolean check(int x, int y, int z, Chunk chunk) {
+        return chunk.getBlockId(x, y, z) == this.id && (this.meta == -1 || chunk.getBlockMeta(x, y, z) == this.meta);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class BlockModule extends SearchModule.BasePosSearchModule {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)     {
+        if (obj == this) {
             return true;
         } else if (obj.getClass() == BlockModule.class) {
             //don't do instanceof check, since we only want to check if the modules are exactly identical

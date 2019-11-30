@@ -19,8 +19,8 @@ import com.google.gson.JsonObject;
 import net.daporkchop.lib.logging.format.FormatParser;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
-import net.daporkchop.lib.minecraft.tileentity.TileEntitySign;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.tileentity.impl.TileEntitySign;
+import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
@@ -38,16 +38,16 @@ public final class SignModule extends SearchModule.BasePosSearchModule {
 
     @Override
     public void init(World world) {
-        this.standing_sign = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:standing_sign"));
-        this.wall_sign = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:wall_sign"));
+        this.standing_sign = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(new ResourceLocation("minecraft:standing_sign"));
+        this.wall_sign = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(new ResourceLocation("minecraft:wall_sign"));
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
-        column.getTileEntities().stream()
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
+        chunk.tileEntities().stream()
                 .filter(TileEntitySign.class::isInstance)
                 .map(TileEntitySign.class::cast)
-                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), column, te.getLine1(), te.getLine2(), te.getLine3(), te.getLine4()));
+                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te.line1(), te.line2(), te.line3(), te.line4()));
     }
 
     @Override
@@ -59,8 +59,8 @@ public final class SignModule extends SearchModule.BasePosSearchModule {
         object.addProperty("line3", PARSER.parse(args[3].toString()).toRawString());
         object.addProperty("line4", PARSER.parse(args[4].toString()).toRawString());
 
-        int id = ((Column) args[0]).getBlockId(x & 0xF, y, z & 0xF);
-        int meta = ((Column) args[0]).getBlockMeta(x & 0xF, y, z & 0xF);
+        int id = ((Chunk) args[0]).getBlockId(x & 0xF, y, z & 0xF);
+        int meta = ((Chunk) args[0]).getBlockMeta(x & 0xF, y, z & 0xF);
         if (id == this.standing_sign)   {
             object.addProperty("type", "standing_sign");
             String dir = "unknown";

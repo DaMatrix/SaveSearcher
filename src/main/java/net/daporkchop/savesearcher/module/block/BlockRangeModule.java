@@ -17,7 +17,7 @@ package net.daporkchop.savesearcher.module.block;
 
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Chunk;
 
 /**
  * @author DaPorkchop_
@@ -48,12 +48,12 @@ public class BlockRangeModule extends BlockModule {
                 }
                 break;
                 case "min":
-                case "minY":{
+                case "minY": {
                     this.minY = Integer.parseInt(split[1]);
                 }
                 break;
                 case "max":
-                case "maxY":{
+                case "maxY": {
                     this.maxY = Integer.parseInt(split[1]);
                 }
                 break;
@@ -63,7 +63,7 @@ public class BlockRangeModule extends BlockModule {
         }
         if (this.searchName == null) {
             throw new IllegalArgumentException("No id given!");
-        } else if (this.minY > this.maxY)   {
+        } else if (this.minY > this.maxY) {
             throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", this.minY, this.maxY));
         }
     }
@@ -78,13 +78,13 @@ public class BlockRangeModule extends BlockModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
         int maxY = this.maxY;
         int minY = this.minY; //allow JVM to inline into registers
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = maxY; y >= minY; y--) {
-                    this.checkAndAddPos(x, y, z, column);
+                    this.checkAndAddPos(x, y, z, chunk);
                 }
             }
         }
@@ -107,9 +107,9 @@ public class BlockRangeModule extends BlockModule {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)    {
+        if (obj == this) {
             return true;
-        } else if (obj.getClass() == BlockRangeModule.class)    {
+        } else if (obj.getClass() == BlockRangeModule.class) {
             BlockRangeModule other = (BlockRangeModule) obj;
             return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
         } else {

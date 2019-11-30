@@ -21,6 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
+import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
 import net.daporkchop.lib.minecraft.world.World;
 
 import java.util.ArrayDeque;
@@ -31,7 +32,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author DaPorkchop_
  */
-public interface SearchModule extends WorldScanner.ColumnProcessor {
+public interface SearchModule extends ChunkProcessor {
     void init(World world);
 
     void saveData(JsonObject object);

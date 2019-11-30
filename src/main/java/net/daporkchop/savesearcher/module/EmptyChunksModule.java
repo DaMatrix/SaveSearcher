@@ -21,7 +21,7 @@ import com.google.gson.JsonObject;
 import lombok.NonNull;
 import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
@@ -44,29 +44,29 @@ public final class EmptyChunksModule implements SearchModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, @NonNull Column column) {
-        for (int chunkY = 0; chunkY < 15; chunkY++)    { //go from bottom chunk to top as it's more likely to find blocks on the bottom
-            final Chunk chunk = column.getChunk(chunkY);
-            if (chunk == null)  {
+    public void handle(long current, long estimatedTotal, @NonNull Chunk chunk) {
+        for (int chunkY = 0; chunkY < 15; chunkY++) { //go from bottom section to top as it's more likely to find blocks on the bottom
+            final Section section = chunk.section(chunkY);
+            if (section == null) {
                 continue;
             }
-            for (int x = 15; x >= 0; x--)   {
+            for (int x = 15; x >= 0; x--) {
                 for (int y = 15; y >= 0; y--) {
                     for (int z = 15; z >= 0; z--) {
-                        if (chunk.getBlockId(x, y, z) != 0) {
+                        if (section.getBlockId(x, y, z) != 0) {
                             return;
                         }
                     }
                 }
             }
         }
-        this.add(column);
+        this.add(chunk);
     }
 
-    protected void add(@NonNull Column column)  {
+    protected void add(@NonNull Chunk chunk) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("x", column.getX());
-        obj.addProperty("z", column.getZ());
+        obj.addProperty("x", chunk.getX());
+        obj.addProperty("z", chunk.getZ());
         this.values.add(obj);
     }
 

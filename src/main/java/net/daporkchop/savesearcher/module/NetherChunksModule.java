@@ -22,7 +22,7 @@ import lombok.NonNull;
 import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
@@ -43,30 +43,30 @@ public final class NetherChunksModule implements SearchModule {
 
     @Override
     public void init(World world) {
-        this.bedrock_id = world.getSave().getRegistry(new ResourceLocation("minecraft:blocks")).getId(new ResourceLocation("minecraft:bedrock"));
+        this.bedrock_id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(new ResourceLocation("minecraft:bedrock"));
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, @NonNull Column column) {
+    public void handle(long current, long estimatedTotal, @NonNull Chunk chunk) {
         final int id = this.bedrock_id;
-        final Chunk chunk = column.getChunk(7);
-        if (chunk == null)  {
+        final Section section = chunk.section(7);
+        if (section == null) {
             return;
         }
-        for (int x = 15; x >= 0; x--)   {
-            for (int z = 15; z >= 0; z--)   {
-                if (chunk.getBlockId(x, 15, z) == id)   {
-                    this.add(column);
+        for (int x = 15; x >= 0; x--) {
+            for (int z = 15; z >= 0; z--) {
+                if (section.getBlockId(x, 15, z) == id) {
+                    this.add(chunk);
                     return;
                 }
             }
         }
     }
 
-    protected void add(@NonNull Column column)  {
+    protected void add(@NonNull Chunk chunk) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("x", column.getX());
-        obj.addProperty("z", column.getZ());
+        obj.addProperty("x", chunk.getX());
+        obj.addProperty("z", chunk.getZ());
         this.values.add(obj);
     }
 

@@ -25,6 +25,8 @@ import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.math.vector.i.Vec2i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
+import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
+import net.daporkchop.lib.minecraft.region.util.NeighboringChunkProcessor;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
@@ -223,16 +225,16 @@ public class Main implements Logging {
         AtomicLong count = new AtomicLong(0L);
         Set<Vec2i> regionPositions = Collections.newSetFromMap(new ConcurrentHashMap<>());
         try (MinecraftSave save = new SaveBuilder().setFormat(new AnvilSaveFormat(worldFile)).build()) {
-            World world = save.getWorld(dim);
+            World world = save.world(dim);
             if (world == null) {
                 throw new IllegalArgumentException(String.format("Invalid world: %d", dim));
             }
             modules.forEach(m -> m.init(world));
             WorldScanner scanner = new WorldScanner(world) {
                 @Override
-                public WorldScanner addProcessor(ColumnProcessor processor) {
-                    if (processor instanceof ColumnProcessorNeighboring) {
-                        return super.addProcessor((ColumnProcessorNeighboring) processor);
+                public WorldScanner addProcessor(ChunkProcessor processor) {
+                    if (processor instanceof NeighboringChunkProcessor) {
+                        return super.addProcessor((NeighboringChunkProcessor) processor);
                     } else {
                         return super.addProcessor(processor);
                     }

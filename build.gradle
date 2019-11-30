@@ -18,13 +18,13 @@ apply plugin: "java"
 ext {
     //general things
     javaVersion = "1.8"
-    savesearcherVersion = "1.4.0-SNAPSHOT"
+    savesearcherVersion = "1.4.1-SNAPSHOT"
 
     //dependency things
     gsonVersion = "2.8.5"
     junitVersion = "4.12"
     lombokVersion = "1.16.20"
-    porklibVersion = "0.4.1"
+    porklibVersion = "0.5.0-SNAPSHOT"
 }
 
 group "net.daporkchop"
@@ -55,6 +55,7 @@ configurations {
 dependencies {
     shade "com.google.code.gson:gson:$gsonVersion"
 
+    shade "net.daporkchop.lib:http:$porklibVersion"
     shade "net.daporkchop.lib:logging:$porklibVersion"
     shade "net.daporkchop.lib:minecraft-worldscanner:$porklibVersion"
 

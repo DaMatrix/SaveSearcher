@@ -16,22 +16,20 @@
 package net.daporkchop.savesearcher.module;
 
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.unsafe.PUnsafe;
 import net.daporkchop.savesearcher.SearchModule;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author DaPorkchop_
  */
 public final class AvgHeightModule implements SearchModule {
     protected static final long HEIGHT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "height");
-    protected static final long COUNT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "count");
+    protected static final long COUNT_OFFSET  = PUnsafe.pork_getOffset(AvgHeightModule.class, "count");
 
     private volatile long height = 0L;
-    private volatile long count = 0L;
+    private volatile long count  = 0L;
 
     public AvgHeightModule(String[] args) {
     }
@@ -47,15 +45,15 @@ public final class AvgHeightModule implements SearchModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
-        PUnsafe.getAndAddLong(this, COUNT_OFFSET, 256L);
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
         int c = 0;
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                c += column.getHighestBlock(x, z);
+                c += chunk.getHighestBlock(x, z);
             }
         }
         PUnsafe.getAndAddLong(this, HEIGHT_OFFSET, c);
+        PUnsafe.getAndAddLong(this, COUNT_OFFSET, 256L);
     }
 
     @Override

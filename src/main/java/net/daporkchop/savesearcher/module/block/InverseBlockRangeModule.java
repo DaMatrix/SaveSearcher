@@ -15,7 +15,7 @@
 
 package net.daporkchop.savesearcher.module.block;
 
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Chunk;
 
 /**
  * @author DaPorkchop_
@@ -26,20 +26,20 @@ public final class InverseBlockRangeModule extends BlockRangeModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
         int maxY = this.maxY;
         int minY = this.minY; //allow JVM to inline into registers
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = maxY; y >= minY; y--) {
-                    if (this.check(x, y, z, column))    {
+                    if (this.check(x, y, z, chunk)) {
                         return;
                     }
                 }
             }
         }
-        synchronized (this.values)  {
-            this.values.add(InverseBlockModule.createElement(column));
+        synchronized (this.values) {
+            this.values.add(InverseBlockModule.createElement(chunk));
         }
     }
 
@@ -55,9 +55,9 @@ public final class InverseBlockRangeModule extends BlockRangeModule {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)    {
+        if (obj == this) {
             return true;
-        } else if (obj.getClass() == InverseBlockRangeModule.class)    {
+        } else if (obj.getClass() == InverseBlockRangeModule.class) {
             InverseBlockRangeModule other = (InverseBlockRangeModule) obj;
             return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
         } else {

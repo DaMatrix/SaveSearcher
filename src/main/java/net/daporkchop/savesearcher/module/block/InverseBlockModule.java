@@ -16,16 +16,16 @@
 package net.daporkchop.savesearcher.module.block;
 
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Chunk;
 
 /**
  * @author DaPorkchop_
  */
 public final class InverseBlockModule extends BlockModule {
-    static JsonObject createElement(Column column) {
+    static JsonObject createElement(Chunk chunk) {
         JsonObject object = new JsonObject();
-        object.addProperty("chunkX", column.getX());
-        object.addProperty("chunkZ", column.getZ());
+        object.addProperty("chunkX", chunk.getX());
+        object.addProperty("chunkZ", chunk.getZ());
         return object;
     }
 
@@ -34,18 +34,18 @@ public final class InverseBlockModule extends BlockModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = 255; y >= 0; y--) {
-                    if (this.check(x, y, z, column)) {
+                    if (this.check(x, y, z, chunk)) {
                         return; //if block matches, break out
                     }
                 }
             }
         }
         synchronized (this.values) {
-            this.values.add(createElement(column));
+            this.values.add(createElement(chunk));
         }
     }
 

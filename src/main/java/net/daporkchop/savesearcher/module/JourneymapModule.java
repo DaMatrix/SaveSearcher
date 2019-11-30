@@ -19,11 +19,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.math.vector.i.Vec3i;
-import net.daporkchop.lib.minecraft.world.Column;
+import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.SearchModule;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public final class JourneymapModule implements SearchModule {
         }
         if (this.rootDir == null) {
             throw new IllegalArgumentException("No file given!");
-        } else if ((!this.rootDir.exists() && !this.rootDir.mkdirs()) || !this.rootDir.isDirectory())  {
+        } else if ((!this.rootDir.exists() && !this.rootDir.mkdirs()) || !this.rootDir.isDirectory()) {
             throw new IllegalArgumentException(String.format("Invalid root directory: %s", this.rootDir.getAbsolutePath()));
         }
     }
@@ -76,7 +76,7 @@ public final class JourneymapModule implements SearchModule {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Column column) {
+    public void handle(long current, long estimatedTotal, Chunk chunk) {
     }
 
     @Override
@@ -85,7 +85,7 @@ public final class JourneymapModule implements SearchModule {
         System.out.printf("Deleting output directory %s ...\n", this.rootDir.getAbsolutePath());
         rmDir(this.rootDir);
         JsonArray dimensionsArray = new JsonArray();
-        dimensionsArray.add(world.getId());
+        dimensionsArray.add(world.dimension());
         AtomicInteger totalCount = new AtomicInteger(0);
         modules.forEach(module -> {
             Collection<Vec3i> locations = module.getLocations();
@@ -94,7 +94,7 @@ public final class JourneymapModule implements SearchModule {
                 Color color = new Color(name.hashCode());
                 System.out.printf("Generating waypoints for \"%s\"...\n", name);
                 File outDir = new File(this.rootDir, name);
-                if (!outDir.mkdirs())   {
+                if (!outDir.mkdirs()) {
                     throw new IllegalStateException(String.format("Couldn't create directory: %s", outDir.getAbsolutePath()));
                 }
                 AtomicInteger counter = new AtomicInteger(0);
@@ -143,16 +143,16 @@ public final class JourneymapModule implements SearchModule {
         return "journeymap";
     }
 
-    private static void rmDir(File file)    {
+    private static void rmDir(File file) {
         rmDir(file, false);
     }
 
-    private static void rmDir(File file, boolean sub)    {
+    private static void rmDir(File file, boolean sub) {
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 rmDir(f, true);
             }
-            if (sub)    {
+            if (sub) {
                 file.delete();
             }
         } else {
@@ -167,7 +167,7 @@ public final class JourneymapModule implements SearchModule {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)    {
+        if (obj == this) {
             return true;
         } else if (obj instanceof JourneymapModule) {
             JourneymapModule other = (JourneymapModule) obj;
