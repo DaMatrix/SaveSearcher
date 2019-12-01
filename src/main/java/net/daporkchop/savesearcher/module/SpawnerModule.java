@@ -18,6 +18,7 @@ package net.daporkchop.savesearcher.module;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.logging.format.FormatParser;
+import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
@@ -28,7 +29,19 @@ import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
  * @author DaPorkchop_
  */
 public final class SpawnerModule extends SearchModule.BasePosSearchModule {
+    protected final ResourceLocation filterId;
+
     public SpawnerModule(String[] args) {
+        switch (args.length)    {
+            case 1:
+                this.filterId = null;
+                break;
+            case 2:
+                this.filterId = new ResourceLocation(args[1]);
+                break;
+            default:
+                throw new IllegalArgumentException("--spawner must be called with either no arguments or the entity ID of the spawner type to search for!");
+        }
     }
 
     @Override
@@ -37,10 +50,18 @@ public final class SpawnerModule extends SearchModule.BasePosSearchModule {
 
     @Override
     public void handle(long current, long estimatedTotal, Chunk chunk) {
-        chunk.tileEntities().stream()
-                .filter(TileEntitySpawner.class::isInstance)
-                .map(TileEntitySpawner.class::cast)
-                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te));
+        if (this.filterId == null) {
+            chunk.tileEntities().stream()
+                    .filter(TileEntitySpawner.class::isInstance)
+                    .map(TileEntitySpawner.class::cast)
+                    .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te));
+        } else {
+            chunk.tileEntities().stream()
+                    .filter(TileEntitySpawner.class::isInstance)
+                    .map(TileEntitySpawner.class::cast)
+                    .filter(te -> te.canSpawn(this.filterId))
+                    .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te));
+        }
     }
 
     @Override
@@ -64,7 +85,7 @@ public final class SpawnerModule extends SearchModule.BasePosSearchModule {
 
     @Override
     public String toString() {
-        return "Spawners";
+        return this.filterId == null ? "Spawners" : String.format("Spawners(%s)", this.filterId);
     }
 
     @Override
@@ -74,11 +95,22 @@ public final class SpawnerModule extends SearchModule.BasePosSearchModule {
 
     @Override
     public int hashCode() {
-        return SpawnerModule.class.hashCode();
+        return this.filterId == null ? SpawnerModule.class.hashCode() : this.filterId.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof SpawnerModule;
+        if (obj == this)    {
+            return true;
+        } else if (obj instanceof SpawnerModule)    {
+            SpawnerModule other = (SpawnerModule) obj;
+            if (this.filterId == null)  {
+                return other.filterId == null;
+            } else {
+                return this.filterId.equals(other.filterId);
+            }
+        } else {
+            return false;
+        }
     }
 }

@@ -155,7 +155,7 @@ public class Main implements Logging {
                     .info("--netherchunks                                Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                                 Scan for empty (air-only) chunks.")
                     .info("--sign                                        Scan for sign blocks, saving coordinates and text.")
-                    .info("--spawner                                     Scan for spawner blocks, saving coordinates and entity type.");
+                    .info("--spawner(,<id>)                              Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.");
             return;
         } else {
             logger.addFile(new File(String.format("savesearcher-%d.log", System.currentTimeMillis())).getAbsoluteFile(), true, LogAmount.DEBUG)

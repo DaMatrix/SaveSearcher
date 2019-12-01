@@ -21,10 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.tileentity.TileEntityBase;
-import net.daporkchop.lib.nbt.tag.Tag;
 import net.daporkchop.lib.nbt.tag.notch.CompoundTag;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,7 +39,7 @@ public final class TileEntitySpawner extends TileEntityBase {
 
     @Override
     protected void doInit(@NonNull CompoundTag nbt) {
-        if (nbt.contains("SpawnPotentials"))     {
+        if (nbt.contains("SpawnPotentials")) {
             this.entries = Collections.unmodifiableList(nbt.<CompoundTag>getList("SpawnPotentials").stream()
                     .map(tag -> new SpawnerEntry(new ResourceLocation(tag.getCompound("Entity").getString("id")), tag.getInt("Weight")))
                     .collect(Collectors.toList()));
@@ -55,12 +53,27 @@ public final class TileEntitySpawner extends TileEntityBase {
 
     @Override
     protected void doDeinit() {
-        super.doDeinit();
+        this.entries = Collections.emptyList();
     }
 
     @Override
     public ResourceLocation id() {
         return ID;
+    }
+
+    /**
+     * Checks if this spawner is capable of spawning the given entity type.
+     *
+     * @param id the id of the entity
+     * @return whether or not this spawner can spawn entities with the given id
+     */
+    public boolean canSpawn(@NonNull ResourceLocation id) {
+        for (int i = 0, size = this.entries.size(); i < size; i++) {
+            if (this.entries.get(i).id.equals(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -71,8 +84,8 @@ public final class TileEntitySpawner extends TileEntityBase {
     @RequiredArgsConstructor
     @Getter
     @Accessors(fluent = true)
-    public static final class SpawnerEntry  {
+    public static final class SpawnerEntry {
         protected final ResourceLocation id;
-        protected final int weight;
+        protected final int              weight;
     }
 }
