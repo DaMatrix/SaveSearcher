@@ -27,9 +27,11 @@ import net.daporkchop.lib.math.vector.i.Vec2i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
 import net.daporkchop.lib.minecraft.region.util.NeighboringChunkProcessor;
+import net.daporkchop.lib.minecraft.tileentity.TileEntityRegistry;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
+import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
@@ -37,10 +39,12 @@ import net.daporkchop.savesearcher.module.EmptyChunksModule;
 import net.daporkchop.savesearcher.module.JourneymapModule;
 import net.daporkchop.savesearcher.module.NetherChunksModule;
 import net.daporkchop.savesearcher.module.SignModule;
+import net.daporkchop.savesearcher.module.SpawnerModule;
 import net.daporkchop.savesearcher.module.block.BlockModule;
 import net.daporkchop.savesearcher.module.block.BlockRangeModule;
 import net.daporkchop.savesearcher.module.block.InverseBlockModule;
 import net.daporkchop.savesearcher.module.block.InverseBlockRangeModule;
+import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -76,6 +80,7 @@ public class Main implements Logging {
         registeredModules.put("--journeymap", JourneymapModule::new);
         registeredModules.put("--netherchunks", NetherChunksModule::new);
         registeredModules.put("--sign", SignModule::new);
+        registeredModules.put("--spawner", SpawnerModule::new);
     }
 
     public static void main(String... args) throws IOException {
@@ -149,7 +154,8 @@ public class Main implements Logging {
                     .info("--journeymap,root=<path>                      Generate waypoint files for JourneyMap in the given output directory. Waypoints for each module will be placed in their own subdirectory.")
                     .info("--netherchunks                                Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                                 Scan for empty (air-only) chunks.")
-                    .info("--sign                                        Scan for sign blocks, saving coordinates and text.");
+                    .info("--sign                                        Scan for sign blocks, saving coordinates and text.")
+                    .info("--spawner                                     Scan for spawner blocks, saving coordinates and entity type.");
             return;
         } else {
             logger.addFile(new File(String.format("savesearcher-%d.log", System.currentTimeMillis())).getAbsoluteFile(), true, LogAmount.DEBUG)
@@ -196,7 +202,7 @@ public class Main implements Logging {
                 throw new IllegalArgumentException(String.format("Invalid module: %s", split[0]));
             }
             SearchModule module = function.apply(s.replaceAll(split[0], "").replaceAll(split[0] + ",", "").split(","));
-            if (modules.contains(module))   {
+            if (modules.contains(module)) {
                 logger.warn("Duplicate argument: \"%s\"!", s);
             } else {
                 modules.add(module);
@@ -224,7 +230,14 @@ public class Main implements Logging {
         long time = System.currentTimeMillis();
         AtomicLong count = new AtomicLong(0L);
         Set<Vec2i> regionPositions = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        try (MinecraftSave save = new SaveBuilder().setFormat(new AnvilSaveFormat(worldFile)).build()) {
+        try (MinecraftSave save = new SaveBuilder()
+                .setInitFunctions(new MinecraftSaveConfig()
+                        .readOnly(true)
+                        .writeRequired(false)
+                        .tileEntityFactory(TileEntityRegistry.builder(TileEntityRegistry.defaultRegistry())
+                                .add(TileEntitySpawner.ID, TileEntitySpawner::new)
+                                .build()))
+                .setFormat(new AnvilSaveFormat(worldFile)).build()) {
             World world = save.world(dim);
             if (world == null) {
                 throw new IllegalArgumentException(String.format("Invalid world: %d", dim));
