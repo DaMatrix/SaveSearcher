@@ -31,8 +31,11 @@ import net.daporkchop.lib.minecraft.tileentity.TileEntityRegistry;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
+import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionFile;
+import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
+import net.daporkchop.lib.natives.PNatives;
 import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
 import net.daporkchop.savesearcher.module.EmptyChunksModule;
@@ -90,6 +93,10 @@ public class Main implements Logging {
             logger.alert(ex);
             System.exit(1);
         });
+
+        if (!PNatives.ZLIB.isNative())  {
+            throw new IllegalStateException("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32");
+        }
 
         String versionName;
         {
@@ -158,7 +165,7 @@ public class Main implements Logging {
                     .info("--spawner(,<id>)                              Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.");
             return;
         } else {
-            logger.addFile(new File(String.format("savesearcher-%d.log", System.currentTimeMillis())).getAbsoluteFile(), true, LogAmount.DEBUG)
+            logger.addFile(new File("savesearcher.log").getAbsoluteFile(), true, LogAmount.DEBUG)
                     .info("SaveSearcher v%s", versionName)
                     .info("Copyright (c) DaPorkchop_")
                     .info("https://github.com/DaMatrix/SaveSearcher")
@@ -182,7 +189,6 @@ public class Main implements Logging {
                 }
                 continue;
                 case "--dim": {
-                    if (true) throw new UnsupportedOperationException("--dim option is currently unsupported!");
                     dim = Integer.parseInt(split[1]);
                 }
                 continue;
@@ -232,8 +238,7 @@ public class Main implements Logging {
         Set<Vec2i> regionPositions = Collections.newSetFromMap(new ConcurrentHashMap<>());
         try (MinecraftSave save = new SaveBuilder()
                 .setInitFunctions(new MinecraftSaveConfig()
-                        .readOnly(true)
-                        .writeRequired(false)
+                        .openOptions(new RegionOpenOptions().access(RegionFile.Access.READ_ONLY).mode(RegionFile.Mode.MMAP_FULL))
                         .tileEntityFactory(TileEntityRegistry.builder(TileEntityRegistry.defaultRegistry())
                                 .add(TileEntitySpawner.ID, TileEntitySpawner::new)
                                 .build()))

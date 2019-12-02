@@ -18,7 +18,7 @@ apply plugin: "java"
 ext {
     //general things
     javaVersion = "1.8"
-    savesearcherVersion = "1.4.3"
+    savesearcherVersion = "1.4.4"
 
     //dependency things
     gsonVersion = "2.8.5"
@@ -71,7 +71,7 @@ jar {
     from {
         configurations.shade.collect {
             it.isDirectory() ? it : zipTree(it)
-        }
+        }.unique()
     } {
         exclude "META-INF/**"
         exclude sourceSets.main.output.asFileTree.collect {
