@@ -18,7 +18,7 @@ apply plugin: "java"
 ext {
     //general things
     javaVersion = "1.8"
-    savesearcherVersion = "1.4.4"
+    savesearcherVersion = "1.4.5"
 
     //dependency things
     gsonVersion = "2.8.5"

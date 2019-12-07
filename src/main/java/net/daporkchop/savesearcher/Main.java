@@ -245,7 +245,7 @@ public class Main implements Logging {
                 .setFormat(new AnvilSaveFormat(worldFile)).build()) {
             World world = save.world(dim);
             if (world == null) {
-                throw new IllegalArgumentException(String.format("Invalid world: %d", dim));
+                throw new IllegalArgumentException(String.format("Invalid dimension: %d", dim));
             }
             modules.forEach(m -> m.init(world));
             WorldScanner scanner = new WorldScanner(world) {
