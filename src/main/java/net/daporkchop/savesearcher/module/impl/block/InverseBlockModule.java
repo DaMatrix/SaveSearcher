@@ -16,20 +16,24 @@
 package net.daporkchop.savesearcher.module.impl.block;
 
 import com.google.gson.JsonObject;
+import lombok.NonNull;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.PositionData;
+import net.daporkchop.savesearcher.module.PositionDataXZ;
+import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-public class BlockModule implements SearchModule {
+public final class InverseBlockModule extends AbstractSearchModule<PositionDataXZ> {
     protected ResourceLocation searchName;
     protected int meta = -1;
     protected int id;
 
-    public BlockModule(String[] args) {
+    public InverseBlockModule(String[] args) {
         for (String s : args) {
             if (s.isEmpty()) {
                 continue;
@@ -59,53 +63,35 @@ public class BlockModule implements SearchModule {
         }
     }
 
-    protected BlockModule() {
-    }
-
     @Override
-    public void init(World world) {
-        this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName);
-        if (this.id == -1) {
+    public void init(@NonNull World world, @NonNull OutputHandle handle) {
+        super.init(world, handle);
+
+        if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
             throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
         }
     }
 
     @Override
-    public void saveData(JsonObject object) {
-        super.saveData(object);
-        object.addProperty("id", this.searchName.toString());
-        object.addProperty("meta", this.meta);
-    }
+    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+        final int id = this.id;
+        final int meta = this.meta;
 
-    @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = 255; y >= 0; y--) {
-                    this.checkAndAddPos(x, y, z, chunk);
+                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
+                        return;
+                    }
                 }
             }
         }
-    }
-
-    protected void checkAndAddPos(int x, int y, int z, Chunk chunk) {
-        if (this.check(x, y, z, chunk)) {
-            this.add(x + (chunk.getX() << 4), y, z + (chunk.getZ() << 4));
-        }
-    }
-
-    protected boolean check(int x, int y, int z, Chunk chunk) {
-        return chunk.getBlockId(x, y, z) == this.id && (this.meta == -1 || chunk.getBlockMeta(x, y, z) == this.meta);
+        handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
     public String toString() {
-        return String.format("Block (id=%s, meta=%d)", this.searchName.toString(), this.meta);
-    }
-
-    @Override
-    public String getSaveName() {
-        return "block";
+        return String.format("Block - Inverted (id=%s, meta=%d)", this.searchName.toString(), this.meta);
     }
 
     @Override
@@ -118,9 +104,8 @@ public class BlockModule implements SearchModule {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        } else if (obj.getClass() == BlockModule.class) {
-            //don't do instanceof check, since we only want to check if the modules are exactly identical
-            BlockModule other = (BlockModule) obj;
+        } else if (obj.getClass() == InverseBlockModule.class) {
+            InverseBlockModule other = (InverseBlockModule) obj;
             return this.searchName.equals(other.searchName) && this.meta == other.meta;
         } else {
             return false;

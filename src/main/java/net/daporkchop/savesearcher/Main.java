@@ -32,7 +32,15 @@ import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.lib.natives.PNatives;
 import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
+import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
+import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
+import net.daporkchop.savesearcher.module.impl.SpawnerModule;
+import net.daporkchop.savesearcher.module.impl.block.BlockModule;
+import net.daporkchop.savesearcher.module.impl.block.BlockRangeModule;
+import net.daporkchop.savesearcher.module.impl.block.InverseBlockModule;
+import net.daporkchop.savesearcher.module.impl.block.InverseBlockRangeModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
@@ -56,7 +64,6 @@ import java.util.function.Function;
 public class Main implements Logging {
     private static final Map<String, Function<String[], SearchModule>> REGISTERED_MODULES = new HashMap<String, Function<String[], SearchModule>>() {
         {
-            /*this.put("--avgheight", AvgHeightModule::new);
             this.put("--block", BlockModule::new);
             this.put("--blockinrange", BlockRangeModule::new);
             this.put("--doublechest", DoubleChestModule::new);
@@ -64,7 +71,7 @@ public class Main implements Logging {
             this.put("--invertblock", InverseBlockModule::new);
             this.put("--invertblockinrange", InverseBlockRangeModule::new);
             this.put("--netherchunks", NetherChunksModule::new);
-            this.put("--spawner", SpawnerModule::new);*/
+            this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
         }
     };
@@ -103,7 +110,6 @@ public class Main implements Logging {
                     .info("--output=<path>                              Set the root directory that output data will be written to. default=./scanresult/")
                     .info("")
                     .info("MODULES")
-                    .info("--avgheight                                   Calculate and save the average terrain height of the world")
                     .info("--block,id=<id>(,meta=<meta>)                 Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.")
                     .info("--blockinrange,id=<id>(,meta=<meta>)          Scan for a certain block id+meta in a given vertical range, saving coordinates. Both min and max")
                     .info("              (,min=<min>)(,max=<max>)        values are inclusive. See --block. defaults: min=0, max=255")
@@ -150,6 +156,7 @@ public class Main implements Logging {
                 case "--output":
                     outDir = new File(split[1]);
                     continue;
+                case "--overwrite":
                 case "-o":
                     overwrite = true;
                     continue;

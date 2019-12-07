@@ -16,13 +16,21 @@
 package net.daporkchop.savesearcher.module.impl.block;
 
 import com.google.gson.JsonObject;
+import lombok.NonNull;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
+import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.PositionData;
+import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-public class BlockRangeModule extends BlockModule {
+public final class BlockRangeModule extends AbstractSearchModule<PositionData> {
+    protected ResourceLocation searchName;
+    protected int meta = -1;
+    protected int id;
     protected int minY = 0;
     protected int maxY = 255;
 
@@ -69,22 +77,27 @@ public class BlockRangeModule extends BlockModule {
     }
 
     @Override
-    public void saveData(JsonObject object) {
-        super.saveData(object);
-        JsonObject rangeObj = new JsonObject();
-        rangeObj.addProperty("min", this.minY);
-        rangeObj.addProperty("max", this.maxY);
-        object.add("range", rangeObj);
+    public void init(@NonNull World world, @NonNull OutputHandle handle) {
+        super.init(world, handle);
+
+        if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+        }
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
-        int maxY = this.maxY;
-        int minY = this.minY; //allow JVM to inline into registers
+    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+        final int id = this.id;
+        final int meta = this.meta;
+        final int maxY = this.maxY;
+        final int minY = this.minY;
+
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
                 for (int y = maxY; y >= minY; y--) {
-                    this.checkAndAddPos(x, y, z, chunk);
+                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
+                        handle.accept(new PositionData(chunk.minX() + x, y, chunk.minZ() + z));
+                    }
                 }
             }
         }
@@ -96,13 +109,8 @@ public class BlockRangeModule extends BlockModule {
     }
 
     @Override
-    public String getSaveName() {
-        return "block_ranged";
-    }
-
-    @Override
     public int hashCode() {
-        return (super.hashCode() * 31 + this.maxY) * 31 + this.minY;
+        return ((this.searchName.hashCode() * 31 + this.meta) * 31 + this.maxY) * 31 + this.minY;
     }
 
     @Override

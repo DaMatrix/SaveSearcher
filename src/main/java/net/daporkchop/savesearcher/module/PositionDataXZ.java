@@ -13,27 +13,25 @@
  *
  */
 
-package net.daporkchop.savesearcher.output.csv;
+package net.daporkchop.savesearcher.module;
 
 import lombok.NonNull;
-import lombok.experimental.UtilityClass;
+import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.math.vector.i.Vec2i;
+import net.daporkchop.lib.math.vector.i.Vec3i;
+import net.daporkchop.lib.minecraft.tileentity.TileEntity;
 
 /**
- * Helper methods for the CSV format.
+ * Base class for module output data that has a position.
+ *
  * @author DaPorkchop_
  */
-@UtilityClass
-public class CSVUtil {
-    public String escape(@NonNull String in) {
-        if (!in.isEmpty()) {
-            if (in.indexOf('"') != -1) {
-                in = in.replace("\"", "\"\"");
-            }
+@RequiredArgsConstructor
+public class PositionDataXZ {
+    public final int x;
+    public final int z;
 
-            if (in.indexOf(',') != -1 || in.indexOf('"') != -1 || in.charAt(0) == ' ' || in.charAt(in.length() - 1) == ' ') {
-                in = String.format("\"%s\"", in);
-            }
-        }
-        return in;
+    public PositionDataXZ(@NonNull Vec2i vec) {
+        this(vec.getX(), vec.getY());
     }
 }

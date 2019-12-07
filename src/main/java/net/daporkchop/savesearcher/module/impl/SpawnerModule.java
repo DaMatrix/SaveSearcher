@@ -17,16 +17,21 @@ package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import lombok.NonNull;
+import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 
 /**
  * @author DaPorkchop_
  */
-public final class SpawnerModule extends SearchModule.BasePosSearchModule {
+public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.SpawnerData> {
     protected final ResourceLocation filterId;
 
     public SpawnerModule(String[] args) {
@@ -43,52 +48,24 @@ public final class SpawnerModule extends SearchModule.BasePosSearchModule {
     }
 
     @Override
-    public void init(World world) {
-    }
-
-    @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
+    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
         if (this.filterId == null) {
             chunk.tileEntities().stream()
                     .filter(TileEntitySpawner.class::isInstance)
-                    .map(TileEntitySpawner.class::cast)
-                    .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te));
+                    .map(te -> new SpawnerData((TileEntitySpawner) te))
+                    .forEach(handle::accept);
         } else {
             chunk.tileEntities().stream()
                     .filter(TileEntitySpawner.class::isInstance)
                     .map(TileEntitySpawner.class::cast)
-                    .filter(te -> te.canSpawn(this.filterId))
-                    .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te));
+                    .map(te -> new SpawnerData((TileEntitySpawner) te))
+                    .forEach(handle::accept);
         }
-    }
-
-    @Override
-    protected JsonObject getObject(int x, int y, int z, Object... args) {
-        JsonObject object = super.getObject(x, y, z, args);
-
-        object.add(
-                "spawn_potentials",
-                ((TileEntitySpawner) args[1]).entries().stream()
-                        .map(entry -> {
-                            JsonObject o = new JsonObject();
-                            o.addProperty("id", entry.id().toString());
-                            o.addProperty("weight", entry.weight());
-                            return o;
-                        })
-                        .collect(JsonArray::new, JsonArray::add, JsonArray::addAll)
-        );
-
-        return object;
     }
 
     @Override
     public String toString() {
         return this.filterId == null ? "Spawners" : String.format("Spawners(%s)", this.filterId);
-    }
-
-    @Override
-    public String getSaveName() {
-        return "spawner";
     }
 
     @Override
@@ -109,6 +86,20 @@ public final class SpawnerModule extends SearchModule.BasePosSearchModule {
             }
         } else {
             return false;
+        }
+    }
+
+    protected static final class SpawnerData extends PositionData  {
+        public final ResourceLocation id;
+
+        public SpawnerData(@NonNull TileEntitySpawner te)   {
+            super(te);
+
+            if (te.entries().size() != 1)   {
+                throw new IllegalArgumentException(String.format("Spawner (%d,%d,%d) has %d entries!", te.getX(), te.getY(), te.getZ(), te.entries().size()));
+            }
+
+            this.id = te.entries().get(0).id();
         }
     }
 }

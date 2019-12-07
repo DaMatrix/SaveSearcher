@@ -13,55 +13,54 @@
  *
  */
 
-package net.daporkchop.savesearcher.module.impl.block;
+package net.daporkchop.savesearcher.module.impl;
 
+import lombok.NonNull;
 import net.daporkchop.lib.minecraft.world.Chunk;
+import net.daporkchop.lib.minecraft.world.Section;
+import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.PositionDataXZ;
+import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-public final class InverseBlockRangeModule extends BlockRangeModule {
-    public InverseBlockRangeModule(String[] args) {
-        super(args);
+public final class EmptyChunksModule extends AbstractSearchModule<PositionDataXZ> {
+    public EmptyChunksModule(String[] args) {
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
-        int maxY = this.maxY;
-        int minY = this.minY; //allow JVM to inline into registers
-        for (int x = 15; x >= 0; x--) {
-            for (int z = 15; z >= 0; z--) {
-                for (int y = maxY; y >= minY; y--) {
-                    if (this.check(x, y, z, chunk)) {
-                        return;
+    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+        for (int chunkY = 0; chunkY < 15; chunkY++) { //go from bottom section to top as it's more likely to find blocks on the bottom
+            final Section section = chunk.section(chunkY);
+            if (section == null) {
+                continue;
+            }
+            for (int x = 15; x >= 0; x--) {
+                for (int y = 15; y >= 0; y--) {
+                    for (int z = 15; z >= 0; z--) {
+                        if (section.getBlockId(x, y, z) != 0) {
+                            return;
+                        }
                     }
                 }
             }
         }
-        synchronized (this.values) {
-            this.values.add(InverseBlockModule.createElement(chunk));
-        }
+        handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
     public String toString() {
-        return String.format("Block - Inverted,Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
+        return "Empty Chunks";
     }
 
     @Override
-    public String getSaveName() {
-        return "block_inverted_ranged";
+    public int hashCode() {
+        return EmptyChunksModule.class.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj.getClass() == InverseBlockRangeModule.class) {
-            InverseBlockRangeModule other = (InverseBlockRangeModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
-        } else {
-            return false;
-        }
+        return obj instanceof EmptyChunksModule;
     }
 }

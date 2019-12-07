@@ -15,64 +15,61 @@
 
 package net.daporkchop.savesearcher.module.impl;
 
-import com.google.gson.JsonObject;
+import lombok.NonNull;
+import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
+import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.lib.unsafe.PUnsafe;
-import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.PositionDataXZ;
+import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-public final class AvgHeightModule implements SearchModule {
-    protected static final long HEIGHT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "height");
-    protected static final long COUNT_OFFSET  = PUnsafe.pork_getOffset(AvgHeightModule.class, "count");
+public final class NetherChunksModule extends AbstractSearchModule<PositionDataXZ> {
+    protected int bedrock_id;
 
-    private volatile long height = 0L;
-    private volatile long count  = 0L;
-
-    public AvgHeightModule(String[] args) {
+    public NetherChunksModule(String[] args) {
     }
 
     @Override
-    public void init(World world) {
-        this.height = this.count = 0L;
+    public void init(@NonNull World world, @NonNull OutputHandle handle) {
+        super.init(world, handle);
+
+        this.bedrock_id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(new ResourceLocation("minecraft:bedrock"));
     }
 
     @Override
-    public void saveData(JsonObject object) {
-        object.addProperty("height", (double) this.height / (double) this.count);
-    }
+    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+        final int id = this.bedrock_id;
 
-    @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
-        int c = 0;
+        final Section section = chunk.section(7);
+        if (section == null) {
+            return;
+        }
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                c += chunk.getHighestBlock(x, z);
+                if (section.getBlockId(x, 15, z) == id) {
+                    handle.accept(new PositionDataXZ(chunk.pos()));
+                    return;
+                }
             }
         }
-        PUnsafe.getAndAddLong(this, HEIGHT_OFFSET, c);
-        PUnsafe.getAndAddLong(this, COUNT_OFFSET, 256L);
     }
 
     @Override
     public String toString() {
-        return "Average Height";
-    }
-
-    @Override
-    public String getSaveName() {
-        return "average_height";
+        return "Nether Chunks";
     }
 
     @Override
     public int hashCode() {
-        return AvgHeightModule.class.hashCode();
+        return NetherChunksModule.class.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof AvgHeightModule;
+        return obj instanceof NetherChunksModule;
     }
 }
