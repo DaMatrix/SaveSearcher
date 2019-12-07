@@ -38,9 +38,6 @@ import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
 import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
-import net.daporkchop.savesearcher.module.impl.block.BlockRangeModule;
-import net.daporkchop.savesearcher.module.impl.block.InverseBlockModule;
-import net.daporkchop.savesearcher.module.impl.block.InverseBlockRangeModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
@@ -64,12 +61,9 @@ import java.util.function.Function;
 public class Main implements Logging {
     private static final Map<String, Function<String[], SearchModule>> REGISTERED_MODULES = new HashMap<String, Function<String[], SearchModule>>() {
         {
-            this.put("--block", BlockModule::new);
-            this.put("--blockinrange", BlockRangeModule::new);
+            this.put("--block", BlockModule::find);
             this.put("--doublechest", DoubleChestModule::new);
             this.put("--emptychunks", EmptyChunksModule::new);
-            this.put("--invertblock", InverseBlockModule::new);
-            this.put("--invertblockinrange", InverseBlockRangeModule::new);
             this.put("--netherchunks", NetherChunksModule::new);
             this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
@@ -103,25 +97,22 @@ public class Main implements Logging {
                     .info("Copyright (c) DaPorkchop_")
                     .info("https://github.com/DaMatrix/SaveSearcher")
                     .info("")
-                    .info("--input=<path>                               Sets the input world path (required)")
-                    .info("--dim=<dimension id>                         Sets the dimension (world) id to scan. default=0")
-                    .info("--verbose                                    Print status updates to console")
-                    .info("--format=<format>                            Sets the format that the output data will be written in. default=csv")
-                    .info("--output=<path>                              Set the root directory that output data will be written to. default=./scanresult/")
+                    .info("--input=<path>                      Sets the input world path (required)")
+                    .info("--dim=<dimension id>                Sets the dimension (world) id to scan. default=0")
+                    .info("--verbose                           Print status updates to console")
+                    .info("--format=<format>                   Sets the format that the output data will be written in. default=csv")
+                    .info("--output=<path>                     Set the root directory that output data will be written to. default=./scanresult/")
                     .info("")
                     .info("MODULES")
-                    .info("--block,id=<id>(,meta=<meta>)                 Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default it is ignored.")
-                    .info("--blockinrange,id=<id>(,meta=<meta>)          Scan for a certain block id+meta in a given vertical range, saving coordinates. Both min and max")
-                    .info("              (,min=<min>)(,max=<max>)        values are inclusive. See --block. defaults: min=0, max=255")
-                    .info("--doublechest                                 Scan for double chests, saving coordinates and whether or not they're trapped.")
-                    .warn("                                                WARNING! Can cause significant slowdown!")
-                    .info("--invertblock,id=<id>(,meta=<meta>)           Scans for chunks that do not contain any of a certain block id+meta, saving chunk coordinates. See --block.")
-                    .info("--invertblockinrange,id=<id>(,meta=<meta>)    Scans for chunks that do not contain any of a certain block id+meta in a given vertical range, saving chunk coordinates. See --blockinrange.")
-                    .info("                    (,min=<min>)(,max=<max>)")
-                    .info("--netherchunks                                Scan for nether chunks that have somehow ended up in the overworld.")
-                    .info("--emptychunks                                 Scan for empty (air-only) chunks.")
-                    .info("--sign                                        Scan for sign blocks, saving coordinates and text.")
-                    .info("--spawner(,<id>)                              Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.");
+                    .info("--block,id=<id>(,meta=<meta>)       Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default")
+                    .info("      (,min=<min>)(,max=<max>)        it's ignored. Both min and max values are inclusive, and default to min=0 and max=255 if not given. Adding the invert flag will cause")
+                    .info("      (,invert)                       a search for chunk coordinates where the given block id+meta does not occur.")
+                    .info("--doublechest                       Scan for double chests, saving coordinates and whether or not they're trapped.")
+                    .warn("                                      WARNING! Can cause significant slowdown!")
+                    .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
+                    .info("--emptychunks                       Scan for empty (air-only) chunks.")
+                    .info("--sign                              Scan for sign blocks, saving coordinates and text.")
+                    .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.");
             return;
         } else {
             logger.addFile(new File("savesearcher.log").getAbsoluteFile(), true, LogAmount.DEBUG)

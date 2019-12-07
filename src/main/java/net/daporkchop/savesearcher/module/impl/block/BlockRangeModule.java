@@ -17,6 +17,8 @@ package net.daporkchop.savesearcher.module.impl.block;
 
 import com.google.gson.JsonObject;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
@@ -27,54 +29,13 @@ import net.daporkchop.savesearcher.output.OutputHandle;
 /**
  * @author DaPorkchop_
  */
-public final class BlockRangeModule extends AbstractSearchModule<PositionData> {
-    protected ResourceLocation searchName;
-    protected int meta = -1;
+@RequiredArgsConstructor
+final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
+    protected final ResourceLocation searchName;
+    protected final int meta;
+    protected final int minY;
+    protected final int maxY;
     protected int id;
-    protected int minY = 0;
-    protected int maxY = 255;
-
-    public BlockRangeModule(String[] args) {
-        for (String s : args) {
-            if (s.isEmpty()) {
-                continue;
-            }
-            String[] split = s.split("=");
-            if (split.length != 2) {
-                throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-            switch (split[0]) {
-                case "id": {
-                    this.searchName = new ResourceLocation(split[1]);
-                }
-                break;
-                case "meta": {
-                    this.meta = Integer.parseInt(split[1]);
-                    if (this.meta > 15 || this.meta < 0) {
-                        throw new IllegalArgumentException(String.format("Invalid meta: %d (must be in range 0-15)", this.meta));
-                    }
-                }
-                break;
-                case "min":
-                case "minY": {
-                    this.minY = Integer.parseInt(split[1]);
-                }
-                break;
-                case "max":
-                case "maxY": {
-                    this.maxY = Integer.parseInt(split[1]);
-                }
-                break;
-                default:
-                    throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-        }
-        if (this.searchName == null) {
-            throw new IllegalArgumentException("No id given!");
-        } else if (this.minY > this.maxY) {
-            throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", this.minY, this.maxY));
-        }
-    }
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
@@ -96,7 +57,7 @@ public final class BlockRangeModule extends AbstractSearchModule<PositionData> {
             for (int z = 15; z >= 0; z--) {
                 for (int y = maxY; y >= minY; y--) {
                     if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
-                        handle.accept(new PositionData(chunk.minX() + x, y, chunk.minZ() + z));
+                        handle.accept(new Vec3i(chunk.minX() + x, y, chunk.minZ() + z));
                     }
                 }
             }
@@ -105,7 +66,11 @@ public final class BlockRangeModule extends AbstractSearchModule<PositionData> {
 
     @Override
     public String toString() {
-        return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
+        if (this.meta == -1)    {
+            return String.format("Block - Ranged (id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
+        } else {
+            return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);
+        }
     }
 
     @Override

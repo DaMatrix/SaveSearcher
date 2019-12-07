@@ -15,10 +15,13 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
-import com.google.gson.JsonObject;
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
+import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
@@ -28,12 +31,15 @@ import net.daporkchop.savesearcher.output.OutputHandle;
 /**
  * @author DaPorkchop_
  */
-public final class BlockModule extends AbstractSearchModule<PositionData> {
-    protected ResourceLocation searchName;
-    protected int meta = -1;
-    protected int id;
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public final class BlockModule extends AbstractSearchModule<Vec3i> {
+    public static SearchModule find(@NonNull String[] args) {
+        ResourceLocation id = null;
+        int meta = -1;
+        int min = 0;
+        int max = 255;
+        boolean invert = false;
 
-    public BlockModule(String[] args) {
         for (String s : args) {
             if (s.isEmpty()) {
                 continue;
@@ -43,25 +49,45 @@ public final class BlockModule extends AbstractSearchModule<PositionData> {
                 throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
             }
             switch (split[0]) {
-                case "id": {
-                    this.searchName = new ResourceLocation(split[1]);
-                }
-                break;
-                case "meta": {
-                    this.meta = Integer.parseInt(split[1]);
-                    if (this.meta > 15 || this.meta < 0) {
-                        throw new IllegalArgumentException(String.format("Invalid meta: %d (must be in range 0-15)", this.meta));
+                case "id":
+                    id = new ResourceLocation(split[1]);
+                    break;
+                case "meta":
+                    meta = Integer.parseInt(split[1]);
+                    if (meta > 15 || meta < 0) {
+                        throw new IllegalArgumentException(String.format("Invalid meta: %d (must be in range 0-15)", meta));
                     }
-                }
-                break;
+                    break;
+                case "min":
+                case "minY":
+                    min = Integer.parseInt(split[1]);
+                    break;
+                case "max":
+                case "maxY":
+                    max = Integer.parseInt(split[1]);
+                    break;
+                case "invert":
+                    invert = true;
+                    break;
                 default:
                     throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
             }
         }
-        if (this.searchName == null) {
+
+        if (id == null) {
             throw new IllegalArgumentException("No id given!");
+        } else if (min > max) {
+            throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", min, max));
+        } else if (min == 0 && max == 255)  {
+            return invert ? new InverseBlockModule(id, meta) : new BlockModule(id, meta);
+        } else {
+            return invert ? new InverseBlockRangeModule(id, meta, min, max) : new BlockRangeModule(id, meta, min, max);
         }
     }
+
+    protected final ResourceLocation searchName;
+    protected final int meta;
+    protected int id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
@@ -77,11 +103,17 @@ public final class BlockModule extends AbstractSearchModule<PositionData> {
         final int id = this.id;
         final int meta = this.meta;
 
-        for (int x = 15; x >= 0; x--) {
-            for (int z = 15; z >= 0; z--) {
-                for (int y = 255; y >= 0; y--) {
-                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
-                        handle.accept(new PositionData(chunk.minX() + x, y, chunk.minZ() + z));
+        for (int sectionY = 15; sectionY >= 0; sectionY--) {
+            Section section = chunk.section(sectionY);
+            if (section == null)    {
+                continue;
+            }
+            for (int x = 15; x >= 0; x--) {
+                for (int z = 15; z >= 0; z--) {
+                    for (int y = 15; y >= 0; y--) {
+                        if (section.getBlockId(x, y, z) == id && (meta == -1 || section.getBlockMeta(x, y, z) == meta)) {
+                            handle.accept(new Vec3i(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z));
+                        }
                     }
                 }
             }
@@ -90,7 +122,11 @@ public final class BlockModule extends AbstractSearchModule<PositionData> {
 
     @Override
     public String toString() {
-        return String.format("Block (id=%s, meta=%d)", this.searchName.toString(), this.meta);
+        if (this.meta == -1) {
+            return String.format("Block (id=%s)", this.searchName);
+        } else {
+            return String.format("Block (id=%s, meta=%d)", this.searchName, this.meta);
+        }
     }
 
     @Override

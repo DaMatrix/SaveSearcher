@@ -16,6 +16,7 @@
 package net.daporkchop.savesearcher.module.impl.block;
 
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
@@ -27,54 +28,13 @@ import net.daporkchop.savesearcher.output.OutputHandle;
 /**
  * @author DaPorkchop_
  */
-public final class InverseBlockRangeModule extends AbstractSearchModule<PositionDataXZ> {
-    protected ResourceLocation searchName;
-    protected int meta = -1;
+@RequiredArgsConstructor
+final class InverseBlockRangeModule extends AbstractSearchModule<PositionDataXZ> {
+    protected final ResourceLocation searchName;
+    protected final int meta;
+    protected final int minY;
+    protected final int maxY;
     protected int id;
-    protected int minY = 0;
-    protected int maxY = 255;
-
-    public InverseBlockRangeModule(String[] args) {
-        for (String s : args) {
-            if (s.isEmpty()) {
-                continue;
-            }
-            String[] split = s.split("=");
-            if (split.length != 2) {
-                throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-            switch (split[0]) {
-                case "id": {
-                    this.searchName = new ResourceLocation(split[1]);
-                }
-                break;
-                case "meta": {
-                    this.meta = Integer.parseInt(split[1]);
-                    if (this.meta > 15 || this.meta < 0) {
-                        throw new IllegalArgumentException(String.format("Invalid meta: %d (must be in range 0-15)", this.meta));
-                    }
-                }
-                break;
-                case "min":
-                case "minY": {
-                    this.minY = Integer.parseInt(split[1]);
-                }
-                break;
-                case "max":
-                case "maxY": {
-                    this.maxY = Integer.parseInt(split[1]);
-                }
-                break;
-                default:
-                    throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-        }
-        if (this.searchName == null) {
-            throw new IllegalArgumentException("No id given!");
-        } else if (this.minY > this.maxY) {
-            throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", this.minY, this.maxY));
-        }
-    }
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
@@ -107,7 +67,11 @@ public final class InverseBlockRangeModule extends AbstractSearchModule<Position
 
     @Override
     public String toString() {
-        return String.format("Block - Inverted,Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
+        if (this.meta == -1)    {
+            return String.format("Block - Inverted,Ranged (id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
+        } else {
+            return String.format("Block - Inverted,Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);
+        }
     }
 
     @Override

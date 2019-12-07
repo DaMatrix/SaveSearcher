@@ -29,7 +29,7 @@ import net.daporkchop.lib.minecraft.tileentity.TileEntity;
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
-public class PositionData {
+public abstract class PositionData {
     public final int x;
     public final int y;
     public final int z;

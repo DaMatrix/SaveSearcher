@@ -17,8 +17,10 @@ package net.daporkchop.savesearcher.module.impl.block;
 
 import com.google.gson.JsonObject;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
+import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
@@ -28,40 +30,11 @@ import net.daporkchop.savesearcher.output.OutputHandle;
 /**
  * @author DaPorkchop_
  */
-public final class InverseBlockModule extends AbstractSearchModule<PositionDataXZ> {
-    protected ResourceLocation searchName;
-    protected int meta = -1;
+@RequiredArgsConstructor
+final class InverseBlockModule extends AbstractSearchModule<PositionDataXZ> {
+    protected final ResourceLocation searchName;
+    protected final int meta;
     protected int id;
-
-    public InverseBlockModule(String[] args) {
-        for (String s : args) {
-            if (s.isEmpty()) {
-                continue;
-            }
-            String[] split = s.split("=");
-            if (split.length != 2) {
-                throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-            switch (split[0]) {
-                case "id": {
-                    this.searchName = new ResourceLocation(split[1]);
-                }
-                break;
-                case "meta": {
-                    this.meta = Integer.parseInt(split[1]);
-                    if (this.meta > 15 || this.meta < 0) {
-                        throw new IllegalArgumentException(String.format("Invalid meta: %d (must be in range 0-15)", this.meta));
-                    }
-                }
-                break;
-                default:
-                    throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-        }
-        if (this.searchName == null) {
-            throw new IllegalArgumentException("No id given!");
-        }
-    }
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
@@ -77,11 +50,21 @@ public final class InverseBlockModule extends AbstractSearchModule<PositionDataX
         final int id = this.id;
         final int meta = this.meta;
 
-        for (int x = 15; x >= 0; x--) {
-            for (int z = 15; z >= 0; z--) {
-                for (int y = 255; y >= 0; y--) {
-                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
-                        return;
+        for (int sectionY = 15; sectionY >= 0; sectionY--) {
+            Section section = chunk.section(sectionY);
+            if (section == null)    {
+                if (id == 0)   {
+                    return;
+                } else {
+                    continue;
+                }
+            }
+            for (int x = 15; x >= 0; x--) {
+                for (int z = 15; z >= 0; z--) {
+                    for (int y = 15; y >= 0; y--) {
+                        if (section.getBlockId(x, y, z) == id && (meta == -1 || section.getBlockMeta(x, y, z) == meta)) {
+                            return;
+                        }
                     }
                 }
             }
@@ -91,7 +74,11 @@ public final class InverseBlockModule extends AbstractSearchModule<PositionDataX
 
     @Override
     public String toString() {
-        return String.format("Block - Inverted (id=%s, meta=%d)", this.searchName.toString(), this.meta);
+        if (this.meta == -1)    {
+            return String.format("Block - Inverted (id=%s)", this.searchName);
+        } else {
+            return String.format("Block - Inverted (id=%s, meta=%d)", this.searchName, this.meta);
+        }
     }
 
     @Override
