@@ -13,11 +13,27 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.output.csv;
+
+import lombok.NonNull;
+import lombok.experimental.UtilityClass;
 
 /**
+ * Helper methods for the CSV format.
  * @author DaPorkchop_
  */
-public class NamedPositionData extends PositionData {
-    public String name;
+@UtilityClass
+public class CSVUtil {
+    public String escape(@NonNull String in) {
+        if (!in.isEmpty()) {
+            if (in.indexOf('"') != -1) {
+                in = in.replace("\"", "\"\"");
+            }
+
+            if (in.indexOf(',') != -1 || in.charAt(0) == ' ' || in.charAt(in.length() - 1) == ' ') {
+                in = String.format("\"%s\"", in);
+            }
+        }
+        return in;
+    }
 }

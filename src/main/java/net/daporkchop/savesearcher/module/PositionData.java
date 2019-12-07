@@ -16,19 +16,29 @@
 package net.daporkchop.savesearcher.module;
 
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.daporkchop.lib.math.vector.i.Vec3i;
+import net.daporkchop.lib.minecraft.tileentity.TileEntity;
 
 /**
  * Base class for module output data that has a position.
  *
  * @author DaPorkchop_
  */
-@Getter
-@Setter
-@Accessors(fluent = true, chain = true)
+@RequiredArgsConstructor
 public abstract class PositionData {
-    public int x;
-    public int y;
-    public int z;
+    public final int x;
+    public final int y;
+    public final int z;
+
+    public PositionData(@NonNull TileEntity te) {
+        this(te.getX(), te.getY(), te.getZ());
+    }
+
+    public PositionData(@NonNull Vec3i vec) {
+        this(vec.getX(), vec.getY(), vec.getZ());
+    }
 }

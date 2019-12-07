@@ -16,139 +16,48 @@
 package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonObject;
+import lombok.NonNull;
 import net.daporkchop.lib.logging.format.FormatParser;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.tileentity.impl.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.PositionData;
+import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-public final class SignModule extends SearchModule.BasePosSearchModule {
-    protected static final FormatParser PARSER = new MinecraftFormatParser();
+public final class SignModule extends AbstractSearchModule<SignModule.SignData> {
+    private static final FormatParser PARSER = new MinecraftFormatParser();
 
-    protected int standing_sign;
-    protected int wall_sign;
+    private int standing_sign;
+    private int wall_sign;
 
     public SignModule(String[] args) {
     }
 
     @Override
-    public void init(World world) {
+    public void init(@NonNull World world, @NonNull OutputHandle handle) {
+        super.init(world, handle);
+
         this.standing_sign = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(new ResourceLocation("minecraft:standing_sign"));
         this.wall_sign = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(new ResourceLocation("minecraft:wall_sign"));
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
+    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
         chunk.tileEntities().stream()
                 .filter(TileEntitySign.class::isInstance)
-                .map(TileEntitySign.class::cast)
-                .forEach(te -> this.add(te.getX(), te.getY(), te.getZ(), chunk, te.line1(), te.line2(), te.line3(), te.line4()));
-    }
-
-    @Override
-    protected JsonObject getObject(int x, int y, int z, Object... args) {
-        JsonObject object = super.getObject(x, y, z, args);
-
-        object.addProperty("line1", PARSER.parse(args[1].toString()).toRawString());
-        object.addProperty("line2", PARSER.parse(args[2].toString()).toRawString());
-        object.addProperty("line3", PARSER.parse(args[3].toString()).toRawString());
-        object.addProperty("line4", PARSER.parse(args[4].toString()).toRawString());
-
-        int id = ((Chunk) args[0]).getBlockId(x & 0xF, y, z & 0xF);
-        int meta = ((Chunk) args[0]).getBlockMeta(x & 0xF, y, z & 0xF);
-        if (id == this.standing_sign)   {
-            object.addProperty("type", "standing_sign");
-            String dir = "unknown";
-            switch (meta)   {
-                case 0:
-                    dir = "south";
-                    break;
-                case 1:
-                    dir = "south-southwest";
-                    break;
-                case 2:
-                    dir = "southwest";
-                    break;
-                case 3:
-                    dir = "west-southwest";
-                    break;
-                case 4:
-                    dir = "west";
-                    break;
-                case 5:
-                    dir = "west-northwest";
-                    break;
-                case 6:
-                    dir = "northwest";
-                    break;
-                case 7:
-                    dir = "north-northwest";
-                    break;
-                case 8:
-                    dir = "north";
-                    break;
-                case 9:
-                    dir = "north-northeast";
-                    break;
-                case 10:
-                    dir = "northeast";
-                    break;
-                case 11:
-                    dir = "east-northeast";
-                    break;
-                case 12:
-                    dir = "east";
-                    break;
-                case 13:
-                    dir = "east-southeast";
-                    break;
-                case 14:
-                    dir = "southeast";
-                    break;
-                case 15:
-                    dir = "south-southeast";
-                    break;
-            }
-            object.addProperty("direction", dir);
-        } else if (id == this.wall_sign)    {
-            object.addProperty("type", "wall_sign");
-            String dir = "unknown";
-            switch (meta)   {
-                case 2:
-                    dir = "north";
-                    break;
-                case 3:
-                    dir = "south";
-                    break;
-                case 4:
-                    dir = "west";
-                    break;
-                case 5:
-                    dir = "east";
-                    break;
-            }
-            object.addProperty("direction", dir);
-        } else {
-            object.addProperty("type", String.format("invalid_id_%d", id));
-            object.addProperty("direction", "unknown");
-        }
-
-        return object;
+                .map(te -> new SignData((TileEntitySign) te, chunk))
+                .forEach(handle::accept);
     }
 
     @Override
     public String toString() {
         return "Signs";
-    }
-
-    @Override
-    public String getSaveName() {
-        return "sign";
     }
 
     @Override
@@ -159,5 +68,103 @@ public final class SignModule extends SearchModule.BasePosSearchModule {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof SignModule;
+    }
+
+    protected class SignData extends PositionData {
+        public final String line1;
+        public final String line2;
+        public final String line3;
+        public final String line4;
+
+        public final String type;
+        public final String direction;
+
+        public SignData(@NonNull TileEntitySign te, @NonNull Chunk chunk) {
+            super(te);
+
+            this.line1 = PARSER.parse(te.line1()).toRawString();
+            this.line2 = PARSER.parse(te.line2()).toRawString();
+            this.line3 = PARSER.parse(te.line3()).toRawString();
+            this.line4 = PARSER.parse(te.line4()).toRawString();
+
+            int id = chunk.getBlockId(te.getX() & 0xF, te.getY(), te.getZ() & 0xF);
+            int meta = chunk.getBlockMeta(te.getX() & 0xF, te.getY(), te.getZ() & 0xF);
+            if (id == SignModule.this.standing_sign) {
+                String dir = "unknown";
+                switch (meta) {
+                    case 0:
+                        dir = "south";
+                        break;
+                    case 1:
+                        dir = "south-southwest";
+                        break;
+                    case 2:
+                        dir = "southwest";
+                        break;
+                    case 3:
+                        dir = "west-southwest";
+                        break;
+                    case 4:
+                        dir = "west";
+                        break;
+                    case 5:
+                        dir = "west-northwest";
+                        break;
+                    case 6:
+                        dir = "northwest";
+                        break;
+                    case 7:
+                        dir = "north-northwest";
+                        break;
+                    case 8:
+                        dir = "north";
+                        break;
+                    case 9:
+                        dir = "north-northeast";
+                        break;
+                    case 10:
+                        dir = "northeast";
+                        break;
+                    case 11:
+                        dir = "east-northeast";
+                        break;
+                    case 12:
+                        dir = "east";
+                        break;
+                    case 13:
+                        dir = "east-southeast";
+                        break;
+                    case 14:
+                        dir = "southeast";
+                        break;
+                    case 15:
+                        dir = "south-southeast";
+                        break;
+                }
+                this.type = "standing_sign";
+                this.direction = dir;
+            } else if (id == SignModule.this.wall_sign) {
+                String dir = "unknown";
+                switch (meta) {
+                    case 2:
+                        dir = "north";
+                        break;
+                    case 3:
+                        dir = "south";
+                        break;
+                    case 4:
+                        dir = "west";
+                        break;
+                    case 5:
+                        dir = "east";
+                        break;
+                }
+                this.type = "wall_sign";
+                this.direction = dir;
+            } else {
+                this.type = String.format("invalid_id_%d", id);
+                this.direction = "unknown";
+            }
+        }
     }
 }

@@ -18,7 +18,7 @@ apply plugin: "java"
 ext {
     //general things
     javaVersion = "1.8"
-    savesearcherVersion = "1.4.5"
+    savesearcherVersion = "1.5.0"
 
     //dependency things
     gsonVersion = "2.8.5"
@@ -67,6 +67,16 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
     testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 }
+
+/*processResources    {
+    //this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        expand "version": project.version
+    }
+}*/
 
 jar {
     from {

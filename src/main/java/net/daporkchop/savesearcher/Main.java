@@ -15,12 +15,7 @@
 
 package net.daporkchop.savesearcher;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import net.daporkchop.lib.http.Http;
+import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.math.vector.i.Vec2i;
@@ -36,29 +31,16 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.lib.natives.PNatives;
-/*import net.daporkchop.savesearcher.module.impl.AvgHeightModule;
-import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
-import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.impl.NetherChunksModule;*/
-import net.daporkchop.savesearcher.module.NamedPositionData;
 import net.daporkchop.savesearcher.module.SearchModule;
-/*import net.daporkchop.savesearcher.module.impl.SignModule;
-import net.daporkchop.savesearcher.module.impl.SpawnerModule;
-import net.daporkchop.savesearcher.module.impl.block.BlockModule;
-import net.daporkchop.savesearcher.module.impl.block.BlockRangeModule;
-import net.daporkchop.savesearcher.module.impl.block.InverseBlockModule;
-import net.daporkchop.savesearcher.module.impl.block.InverseBlockRangeModule;*/
+import net.daporkchop.savesearcher.module.impl.SignModule;
+import net.daporkchop.savesearcher.output.OutputHandle;
+import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
+import net.daporkchop.savesearcher.util.Version;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.lang.reflect.Field;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,20 +54,26 @@ import java.util.function.Function;
  * @author DaPorkchop_
  */
 public class Main implements Logging {
-    private static final Map<String, Function<String[], SearchModule>> registeredModules = new HashMap<>();
+    private static final Map<String, Function<String[], SearchModule>> REGISTERED_MODULES = new HashMap<String, Function<String[], SearchModule>>() {
+        {
+            /*this.put("--avgheight", AvgHeightModule::new);
+            this.put("--block", BlockModule::new);
+            this.put("--blockinrange", BlockRangeModule::new);
+            this.put("--doublechest", DoubleChestModule::new);
+            this.put("--emptychunks", EmptyChunksModule::new);
+            this.put("--invertblock", InverseBlockModule::new);
+            this.put("--invertblockinrange", InverseBlockRangeModule::new);
+            this.put("--netherchunks", NetherChunksModule::new);
+            this.put("--spawner", SpawnerModule::new);*/
+            this.put("--sign", SignModule::new);
+        }
+    };
 
-    static {
-        /*registeredModules.put("--avgheight", AvgHeightModule::new);
-        registeredModules.put("--block", BlockModule::new);
-        registeredModules.put("--blockinrange", BlockRangeModule::new);
-        registeredModules.put("--doublechest", DoubleChestModule::new);
-        registeredModules.put("--emptychunks", EmptyChunksModule::new);
-        registeredModules.put("--invertblock", InverseBlockModule::new);
-        registeredModules.put("--invertblockinrange", InverseBlockRangeModule::new);
-        registeredModules.put("--netherchunks", NetherChunksModule::new);
-        registeredModules.put("--sign", SignModule::new);
-        registeredModules.put("--spawner", SpawnerModule::new);*/
-    }
+    private static final Map<String, Function<File, OutputHandle>> REGISTERED_OUTPUTS = new HashMap<String, Function<File, OutputHandle>>() {
+        {
+            this.put("csv", CSVOutputHandle::new);
+        }
+    };
 
     public static void main(String... args) throws IOException {
         logger.enableANSI().setLogAmount(LogAmount.DEBUG);
@@ -95,59 +83,24 @@ public class Main implements Logging {
             System.exit(1);
         });
 
-        if (!PNatives.ZLIB.isNative())  {
+        if (!PNatives.ZLIB.isNative()) {
             throw new IllegalStateException("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32");
         }
 
-        String versionName;
-        {
-            JsonParser parser = new JsonParser();
-            JsonObject local;
-            try (Reader reader = new InputStreamReader(Main.class.getResourceAsStream("/version.json"))) {
-                local = parser.parse(reader).getAsJsonObject();
-            }
-            try {
-                JsonObject remote = parser.parse(Http.getString("https://raw.githubusercontent.com/DaMatrix/SaveSearcher/master/src/main/resources/version.json")).getAsJsonObject();
-                int localVersion = Integer.parseInt(local.get("versionNew").getAsString().replaceAll("_", ""));
-                int remoteVersion = Integer.parseInt(remote.get("versionNew").getAsString().replaceAll("_", ""));
-                if (localVersion < remoteVersion) {
-                    logger.alert(
-                            "Outdated version! You're still on %s, but the latest version is %s.\nDownload the latest version from https://github.com/DaMatrix/SaveSearcher.\n\nScanner will start in 5 seconds...",
-                            local.get("nameNew").getAsString().replaceAll(" ", ""),
-                            remote.get("nameNew").getAsString().replaceAll(" ", "")
-                    );
-                    try {
-                        Thread.sleep(5000L);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
-                logger.warn("Version check failed, ignoring");
-            }
-            versionName = local.get("nameNew").getAsString().replaceAll(" ", "");
-        }
-        File worldFile = null;
-        File outFile = new File(".", "scanresult.json");
-        int dim = 0;
-        boolean verbose = false;
-        boolean prettyPrintJson = false;
-        Collection<SearchModule> modules = new ArrayDeque<>();
         if (args.length == 0
                 || contains(args, "-h")
                 || contains(args, "--help")
                 || contains(args, "--h")
                 || contains(args, "-help")) {
-            logger.info("SaveSearcher v%s", versionName)
+            logger.info("SaveSearcher v%s", Version.VERSION)
                     .info("Copyright (c) DaPorkchop_")
                     .info("https://github.com/DaMatrix/SaveSearcher")
                     .info("")
                     .info("--input=<path>                               Sets the input world path (required)")
                     .info("--dim=<dimension id>                         Sets the dimension (world) id to scan. default=0")
                     .info("--verbose                                    Print status updates to console")
-                    .info("--prettyPrintJson                            Makes the output json data be formatted")
-                    .info("--output=<path>                              Set the file that output data will be written to. default=./scanresult.json")
+                    .info("--format=<format>                            Sets the format that the output data will be written in. default=csv")
+                    .info("--output=<path>                              Set the root directory that output data will be written to. default=./scanresult/")
                     .info("")
                     .info("MODULES")
                     .info("--avgheight                                   Calculate and save the average terrain height of the world")
@@ -166,12 +119,20 @@ public class Main implements Logging {
             return;
         } else {
             logger.addFile(new File("savesearcher.log").getAbsoluteFile(), true, LogAmount.DEBUG)
-                    .info("SaveSearcher v%s", versionName)
+                    .info("SaveSearcher v%s", Version.VERSION)
                     .info("Copyright (c) DaPorkchop_")
                     .info("https://github.com/DaMatrix/SaveSearcher")
                     .info("")
                     .info("Starting...");
         }
+
+        File worldFile = null;
+        File outDir = new File("scanresult");
+        int dim = 0;
+        boolean verbose = false;
+        boolean overwrite = false;
+        String formatName = "csv";
+        Collection<SearchModule> modules = new ArrayDeque<>();
         for (String s : args) {
             if (s.isEmpty()) {
                 continue;
@@ -179,33 +140,32 @@ public class Main implements Logging {
             String[] split = s.split("=");
             switch (split[0]) {
                 case "--input":
-                case "-i": {
+                case "-i":
                     worldFile = new File(split[1]);
-                }
-                continue;
+                    continue;
+                case "--format":
+                case "-f":
+                    formatName = split[1];
+                    continue;
                 case "--output":
-                case "-o": {
-                    outFile = new File(split[1]);
-                }
-                continue;
-                case "--dim": {
+                    outDir = new File(split[1]);
+                    continue;
+                case "-o":
+                    overwrite = true;
+                    continue;
+                case "--dim":
                     dim = Integer.parseInt(split[1]);
-                }
-                continue;
+                    continue;
                 case "--verbose":
-                case "-v": {
+                case "-v":
                     verbose = true;
-                }
-                continue;
-                case "--prettyPrintJson": {
-                    prettyPrintJson = true;
-                }
-                continue;
+                    continue;
             }
             split = s.split(",");
-            Function<String[], SearchModule> function = registeredModules.get(split[0]);
+            Function<String[], SearchModule> function = REGISTERED_MODULES.get(split[0]);
             if (function == null) {
-                throw new IllegalArgumentException(String.format("Invalid module: %s", split[0]));
+                logger.error("Invalid module: %s", split[0]);
+                System.exit(1);
             }
             SearchModule module = function.apply(s.replaceAll(split[0], "").replaceAll(split[0] + ",", "").split(","));
             if (modules.contains(module)) {
@@ -214,19 +174,32 @@ public class Main implements Logging {
                 modules.add(module);
             }
         }
+
         if (worldFile == null) {
-            throw new IllegalArgumentException("World path not set!");
+            logger.error("World path not set!");
+            System.exit(1);
         } else if (modules.isEmpty()) {
-            throw new IllegalArgumentException("No modules enabled!");
+            logger.error("No modules enabled!");
+            System.exit(1);
         }
 
-        Gson gson;
-        {
-            GsonBuilder builder = new GsonBuilder();
-            if (prettyPrintJson) {
-                builder.setPrettyPrinting();
+        PFiles.ensureDirectoryExists(outDir);
+        if (outDir.listFiles().length != 0) {
+            if (overwrite) {
+                logger.warn("Deleting contents of \"%s\" as -o is enabled...", outDir.getAbsolutePath());
+            } else {
+                logger.error("Output directory \"%s\" is not empty!", outDir.getAbsolutePath())
+                        .error("Use -o to forcibly delete existing files, or delete them manually.");
+                System.exit(1);
             }
-            gson = builder.create();
+        }
+        PFiles.rmContents(outDir);
+
+        if (!REGISTERED_OUTPUTS.containsKey(formatName)) {
+            logger.error("Unknown output format: \"%s\"!")
+                    .error("Valid output formats are:");
+            REGISTERED_OUTPUTS.forEach((name, factory) -> logger.error("  %s", name));
+            System.exit(1);
         }
 
         logger.info("Beginning scan of world %s with %d modules enabled.", worldFile.getAbsolutePath(), modules.size())
@@ -247,7 +220,11 @@ public class Main implements Logging {
             if (world == null) {
                 throw new IllegalArgumentException(String.format("Invalid dimension: %d", dim));
             }
-            //modules.forEach(m -> m.init(world));
+
+            for (SearchModule module : modules) {
+                module.init(world, REGISTERED_OUTPUTS.get(formatName).apply(outDir));
+            }
+
             WorldScanner scanner = new WorldScanner(world) {
                 @Override
                 public WorldScanner addProcessor(ChunkProcessor processor) {
@@ -267,7 +244,6 @@ public class Main implements Logging {
             }
             scanner.addProcessor((current, estimatedTotal, column) -> count.set(current));
             modules.forEach(scanner::addProcessor);
-            //scanner.requireNeighboring();
             scanner.run(true);
         }
         logger.info("Finished scan. Saving data...");
