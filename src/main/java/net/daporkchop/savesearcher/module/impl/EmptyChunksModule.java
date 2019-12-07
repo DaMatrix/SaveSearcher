@@ -13,7 +13,7 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -23,6 +23,7 @@ import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.module.SearchModule;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

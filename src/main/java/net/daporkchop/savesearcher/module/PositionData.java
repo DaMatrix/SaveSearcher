@@ -15,43 +15,20 @@
 
 package net.daporkchop.savesearcher.module;
 
-import lombok.NonNull;
-import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
-import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.output.OutputHandle;
-
-import java.io.IOException;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
- * The core of all SaveSearcher modules.
- * <p>
- * Implementations of this do the actual searching of the world.
+ * Base class for module output data that has a position.
  *
  * @author DaPorkchop_
  */
-public interface SearchModule extends ChunkProcessor, AutoCloseable {
-    /**
-     * Initializes this module for searching the given world.
-     * <p>
-     * This may be used to e.g. obtain any numeric block IDs needed.
-     *
-     * @param world  the world to search in
-     * @param handle the {@link OutputHandle} that any output data should be given to
-     */
-    void init(@NonNull World world, @NonNull OutputHandle handle);
-
-    /**
-     * Closes this module.
-     * <p>
-     * This will cause any unwritten data to be flushed to disk, and the module will no longer be usable.
-     *
-     * @throws IOException if an IO exception occurs while closing the module
-     */
-    @Override
-    void close() throws IOException;
-
-    /**
-     * @return the class of values that will be returned by this module
-     */
-    Class<?> dataType();
+@Getter
+@Setter
+@Accessors(fluent = true, chain = true)
+public abstract class PositionData {
+    public int x;
+    public int y;
+    public int z;
 }

@@ -13,13 +13,14 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 
 /**

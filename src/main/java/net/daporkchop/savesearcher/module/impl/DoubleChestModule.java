@@ -13,7 +13,7 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.region.util.NeighboringChunkProcessor;
@@ -21,6 +21,7 @@ import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.util.BlockAccess;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.module.SearchModule;
 
 /**
  * @author DaPorkchop_

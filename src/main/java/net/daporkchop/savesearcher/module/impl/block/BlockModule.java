@@ -13,7 +13,7 @@
  *
  */
 
-package net.daporkchop.savesearcher.module.block;
+package net.daporkchop.savesearcher.module.impl.block;
 
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;

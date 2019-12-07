@@ -16,6 +16,7 @@
 package net.daporkchop.savesearcher.output;
 
 import lombok.NonNull;
+import net.daporkchop.savesearcher.module.SearchModule;
 
 import java.io.IOException;
 
@@ -25,8 +26,10 @@ import java.io.IOException;
  * @author DaPorkchop_
  */
 public interface OutputHandle extends AutoCloseable {
-    void accept(@NonNull Object data);
+    void init(@NonNull SearchModule module);
 
     @Override
     void close() throws IOException;
+
+    void accept(@NonNull Object data);
 }

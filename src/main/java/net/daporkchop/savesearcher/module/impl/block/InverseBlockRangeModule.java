@@ -13,65 +13,55 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.impl.block;
 
-import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.lib.unsafe.PUnsafe;
 
 /**
  * @author DaPorkchop_
  */
-public final class AvgHeightModule implements SearchModule {
-    protected static final long HEIGHT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "height");
-    protected static final long COUNT_OFFSET  = PUnsafe.pork_getOffset(AvgHeightModule.class, "count");
-
-    private volatile long height = 0L;
-    private volatile long count  = 0L;
-
-    public AvgHeightModule(String[] args) {
-    }
-
-    @Override
-    public void init(World world) {
-        this.height = this.count = 0L;
-    }
-
-    @Override
-    public void saveData(JsonObject object) {
-        object.addProperty("height", (double) this.height / (double) this.count);
+public final class InverseBlockRangeModule extends BlockRangeModule {
+    public InverseBlockRangeModule(String[] args) {
+        super(args);
     }
 
     @Override
     public void handle(long current, long estimatedTotal, Chunk chunk) {
-        int c = 0;
+        int maxY = this.maxY;
+        int minY = this.minY; //allow JVM to inline into registers
         for (int x = 15; x >= 0; x--) {
             for (int z = 15; z >= 0; z--) {
-                c += chunk.getHighestBlock(x, z);
+                for (int y = maxY; y >= minY; y--) {
+                    if (this.check(x, y, z, chunk)) {
+                        return;
+                    }
+                }
             }
         }
-        PUnsafe.getAndAddLong(this, HEIGHT_OFFSET, c);
-        PUnsafe.getAndAddLong(this, COUNT_OFFSET, 256L);
+        synchronized (this.values) {
+            this.values.add(InverseBlockModule.createElement(chunk));
+        }
     }
 
     @Override
     public String toString() {
-        return "Average Height";
+        return String.format("Block - Inverted,Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName.toString(), this.meta, this.minY, this.maxY);
     }
 
     @Override
     public String getSaveName() {
-        return "average_height";
-    }
-
-    @Override
-    public int hashCode() {
-        return AvgHeightModule.class.hashCode();
+        return "block_inverted_ranged";
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof AvgHeightModule;
+        if (obj == this) {
+            return true;
+        } else if (obj.getClass() == InverseBlockRangeModule.class) {
+            InverseBlockRangeModule other = (InverseBlockRangeModule) obj;
+            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
+        } else {
+            return false;
+        }
     }
 }

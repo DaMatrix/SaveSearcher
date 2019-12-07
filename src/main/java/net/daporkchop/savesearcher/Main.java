@@ -36,17 +36,18 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.lib.natives.PNatives;
-import net.daporkchop.savesearcher.module.AvgHeightModule;
-import net.daporkchop.savesearcher.module.DoubleChestModule;
-import net.daporkchop.savesearcher.module.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.NetherChunksModule;
+/*import net.daporkchop.savesearcher.module.impl.AvgHeightModule;
+import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
+import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
+import net.daporkchop.savesearcher.module.impl.NetherChunksModule;*/
+import net.daporkchop.savesearcher.module.NamedPositionData;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.module.SignModule;
-import net.daporkchop.savesearcher.module.SpawnerModule;
-import net.daporkchop.savesearcher.module.block.BlockModule;
-import net.daporkchop.savesearcher.module.block.BlockRangeModule;
-import net.daporkchop.savesearcher.module.block.InverseBlockModule;
-import net.daporkchop.savesearcher.module.block.InverseBlockRangeModule;
+/*import net.daporkchop.savesearcher.module.impl.SignModule;
+import net.daporkchop.savesearcher.module.impl.SpawnerModule;
+import net.daporkchop.savesearcher.module.impl.block.BlockModule;
+import net.daporkchop.savesearcher.module.impl.block.BlockRangeModule;
+import net.daporkchop.savesearcher.module.impl.block.InverseBlockModule;
+import net.daporkchop.savesearcher.module.impl.block.InverseBlockRangeModule;*/
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 
 import java.io.File;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,7 +75,7 @@ public class Main implements Logging {
     private static final Map<String, Function<String[], SearchModule>> registeredModules = new HashMap<>();
 
     static {
-        registeredModules.put("--avgheight", AvgHeightModule::new);
+        /*registeredModules.put("--avgheight", AvgHeightModule::new);
         registeredModules.put("--block", BlockModule::new);
         registeredModules.put("--blockinrange", BlockRangeModule::new);
         registeredModules.put("--doublechest", DoubleChestModule::new);
@@ -82,7 +84,7 @@ public class Main implements Logging {
         registeredModules.put("--invertblockinrange", InverseBlockRangeModule::new);
         registeredModules.put("--netherchunks", NetherChunksModule::new);
         registeredModules.put("--sign", SignModule::new);
-        registeredModules.put("--spawner", SpawnerModule::new);
+        registeredModules.put("--spawner", SpawnerModule::new);*/
     }
 
     public static void main(String... args) throws IOException {
@@ -245,7 +247,7 @@ public class Main implements Logging {
             if (world == null) {
                 throw new IllegalArgumentException(String.format("Invalid dimension: %d", dim));
             }
-            modules.forEach(m -> m.init(world));
+            //modules.forEach(m -> m.init(world));
             WorldScanner scanner = new WorldScanner(world) {
                 @Override
                 public WorldScanner addProcessor(ChunkProcessor processor) {
@@ -267,11 +269,9 @@ public class Main implements Logging {
             modules.forEach(scanner::addProcessor);
             //scanner.requireNeighboring();
             scanner.run(true);
-
-            modules.forEach(m -> m.beforeExit(modules, gson, world));
         }
         logger.info("Finished scan. Saving data...");
-        try (PrintStream out = new PrintStream(new FileOutputStream(outFile), false, "UTF-8")) {
+        /*try (PrintStream out = new PrintStream(new FileOutputStream(outFile), false, "UTF-8")) {
             JsonObject obj = new JsonObject();
             Map<String, Collection<SearchModule>> byName = new HashMap<>();
             modules.forEach(m -> byName.computeIfAbsent(m.getSaveName(), n -> new ArrayList<>()).add(m));
@@ -288,7 +288,7 @@ public class Main implements Logging {
                 obj.add(name, array);
             });
             gson.toJson(obj, out);
-        }
+        }*/
         time = System.currentTimeMillis() - time;
         logger.success("Done!").success(
                 "Scanned %d chunks (across %d regions) in %dh:%dm:%ds",

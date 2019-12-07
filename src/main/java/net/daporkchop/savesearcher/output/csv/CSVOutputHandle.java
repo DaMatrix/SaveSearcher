@@ -13,42 +13,63 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.output.csv;
 
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.experimental.Accessors;
-import net.daporkchop.lib.common.util.GenericMatcher;
-import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.lib.binary.stream.DataOut;
+import net.daporkchop.lib.binary.stream.file.BufferingFileOutput;
+import net.daporkchop.lib.common.function.PFunctions;
+import net.daporkchop.lib.common.misc.file.PFiles;
+import net.daporkchop.lib.reflection.PField;
+import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author DaPorkchop_
  */
-@Getter
-@Accessors(fluent = true)
-public abstract class AbstractSearchModule<S> implements SearchModule {
-    protected final Class<?> dataType = GenericMatcher.find(this.getClass(), AbstractSearchModule.class, "S");
-    protected OutputHandle handle;
+public final class CSVOutputHandle implements OutputHandle {
+    protected final File parent;
+
+    protected Class<?> clazz;
+    protected PField[] fields;
+    protected DataOut out;
+
+    public CSVOutputHandle(@NonNull File parent)    {
+        this.parent = PFiles.ensureDirectoryExists(parent);
+    }
 
     @Override
-    public void init(@NonNull World world, @NonNull OutputHandle handle) {
-        handle.init(this);
-        this.handle = handle;
+    public void init(@NonNull SearchModule module) {
+        this.fields = Arrays.stream((this.clazz = module.dataType()).getFields())
+                .map(PField::of)
+                .filter(PFunctions.not(PField::isTransient))
+                .toArray(PField[]::new);
+        try {
+            this.out = new BufferingFileOutput(new File(this.parent, module + ".csv"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void close() throws IOException {
-        this.handle.close();
+        try {
+            this.out.close();
+        } finally {
+            this.out = null;
+        }
     }
 
     @Override
-    public void handle(long current, long estimatedTotal, @NonNull Chunk chunk) {
-        this.processChunk(chunk, this.handle);
+    public void accept(@NonNull Object data) {
+        if (data.getClass() != this.clazz)  {
+            throw new IllegalArgumentException(String.format("Expected %s but got %s!", this.clazz, data.getClass()));
+        }
     }
-
-    protected abstract void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle);
 }

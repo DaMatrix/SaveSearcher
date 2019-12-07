@@ -13,7 +13,7 @@
  *
  */
 
-package net.daporkchop.savesearcher.module;
+package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonObject;
 import net.daporkchop.lib.logging.format.FormatParser;
@@ -22,6 +22,7 @@ import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.tileentity.impl.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.savesearcher.module.SearchModule;
 
 /**
  * @author DaPorkchop_

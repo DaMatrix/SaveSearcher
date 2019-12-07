@@ -58,6 +58,7 @@ dependencies {
     shade "net.daporkchop.lib:http:$porklibVersion"
     shade "net.daporkchop.lib:logging:$porklibVersion"
     shade "net.daporkchop.lib:minecraft-worldscanner:$porklibVersion"
+    shade "net.daporkchop.lib:reflection:$porklibVersion"
 
     testCompile "junit:junit:$junitVersion"
 
