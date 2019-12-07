@@ -24,7 +24,6 @@ import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.SearchModule;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

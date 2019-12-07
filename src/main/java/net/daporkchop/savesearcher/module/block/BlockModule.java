@@ -19,12 +19,12 @@ import com.google.gson.JsonObject;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.SearchModule;
+import net.daporkchop.savesearcher.module.SearchModule;
 
 /**
  * @author DaPorkchop_
  */
-public class BlockModule extends SearchModule.BasePosSearchModule {
+public class BlockModule implements SearchModule {
     protected ResourceLocation searchName;
     protected int meta = -1;
     protected int id;

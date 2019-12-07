@@ -15,63 +15,32 @@
 
 package net.daporkchop.savesearcher.module;
 
-import com.google.gson.JsonObject;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.experimental.Accessors;
+import net.daporkchop.lib.common.util.GenericMatcher;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.lib.unsafe.PUnsafe;
+import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-public final class AvgHeightModule implements SearchModule {
-    protected static final long HEIGHT_OFFSET = PUnsafe.pork_getOffset(AvgHeightModule.class, "height");
-    protected static final long COUNT_OFFSET  = PUnsafe.pork_getOffset(AvgHeightModule.class, "count");
+@Getter
+@Accessors(fluent = true)
+public abstract class AbstractSearchModule<S> implements SearchModule {
+    protected final Class<?> dataType = GenericMatcher.find(this.getClass(), AbstractSearchModule.class, "S");
+    protected OutputHandle handle;
 
-    private volatile long height = 0L;
-    private volatile long count  = 0L;
-
-    public AvgHeightModule(String[] args) {
+    @Override
+    public void init(@NonNull World world, @NonNull OutputHandle handle) {
+        this.handle = handle;
     }
 
     @Override
-    public void init(World world) {
-        this.height = this.count = 0L;
+    public void handle(long current, long estimatedTotal, @NonNull Chunk chunk) {
+        this.processChunk(chunk, this.handle);
     }
 
-    @Override
-    public void saveData(JsonObject object) {
-        object.addProperty("height", (double) this.height / (double) this.count);
-    }
-
-    @Override
-    public void handle(long current, long estimatedTotal, Chunk chunk) {
-        int c = 0;
-        for (int x = 15; x >= 0; x--) {
-            for (int z = 15; z >= 0; z--) {
-                c += chunk.getHighestBlock(x, z);
-            }
-        }
-        PUnsafe.getAndAddLong(this, HEIGHT_OFFSET, c);
-        PUnsafe.getAndAddLong(this, COUNT_OFFSET, 256L);
-    }
-
-    @Override
-    public String toString() {
-        return "Average Height";
-    }
-
-    @Override
-    public String getSaveName() {
-        return "average_height";
-    }
-
-    @Override
-    public int hashCode() {
-        return AvgHeightModule.class.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof AvgHeightModule;
-    }
+    protected abstract void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle);
 }

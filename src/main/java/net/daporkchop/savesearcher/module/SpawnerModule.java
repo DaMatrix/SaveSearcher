@@ -17,12 +17,9 @@ package net.daporkchop.savesearcher.module;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.daporkchop.lib.logging.format.FormatParser;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
-import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.SearchModule;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 
 /**

@@ -39,8 +39,8 @@ import net.daporkchop.lib.natives.PNatives;
 import net.daporkchop.savesearcher.module.AvgHeightModule;
 import net.daporkchop.savesearcher.module.DoubleChestModule;
 import net.daporkchop.savesearcher.module.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.JourneymapModule;
 import net.daporkchop.savesearcher.module.NetherChunksModule;
+import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.module.SignModule;
 import net.daporkchop.savesearcher.module.SpawnerModule;
 import net.daporkchop.savesearcher.module.block.BlockModule;
@@ -80,7 +80,6 @@ public class Main implements Logging {
         registeredModules.put("--emptychunks", EmptyChunksModule::new);
         registeredModules.put("--invertblock", InverseBlockModule::new);
         registeredModules.put("--invertblockinrange", InverseBlockRangeModule::new);
-        registeredModules.put("--journeymap", JourneymapModule::new);
         registeredModules.put("--netherchunks", NetherChunksModule::new);
         registeredModules.put("--sign", SignModule::new);
         registeredModules.put("--spawner", SpawnerModule::new);
@@ -158,7 +157,6 @@ public class Main implements Logging {
                     .info("--invertblock,id=<id>(,meta=<meta>)           Scans for chunks that do not contain any of a certain block id+meta, saving chunk coordinates. See --block.")
                     .info("--invertblockinrange,id=<id>(,meta=<meta>)    Scans for chunks that do not contain any of a certain block id+meta in a given vertical range, saving chunk coordinates. See --blockinrange.")
                     .info("                    (,min=<min>)(,max=<max>)")
-                    .info("--journeymap,root=<path>                      Generate waypoint files for JourneyMap in the given output directory. Waypoints for each module will be placed in their own subdirectory.")
                     .info("--netherchunks                                Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                                 Scan for empty (air-only) chunks.")
                     .info("--sign                                        Scan for sign blocks, saving coordinates and text.")
