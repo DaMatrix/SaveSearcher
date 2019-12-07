@@ -58,7 +58,8 @@ public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.Spaw
             chunk.tileEntities().stream()
                     .filter(TileEntitySpawner.class::isInstance)
                     .map(TileEntitySpawner.class::cast)
-                    .map(te -> new SpawnerData((TileEntitySpawner) te))
+                    .filter(te -> te.canSpawn(this.filterId))
+                    .map(SpawnerData::new)
                     .forEach(handle::accept);
         }
     }

@@ -15,6 +15,7 @@
 
 package net.daporkchop.savesearcher;
 
+import net.daporkchop.lib.common.function.io.IOConsumer;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
@@ -40,6 +41,7 @@ import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
+import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 import net.daporkchop.savesearcher.util.Version;
 
@@ -73,6 +75,7 @@ public class Main implements Logging {
     private static final Map<String, Function<File, OutputHandle>> REGISTERED_OUTPUTS = new HashMap<String, Function<File, OutputHandle>>() {
         {
             this.put("csv", CSVOutputHandle::new);
+            this.put("csv_gz", CompressedCSVOutputHandle::new);
         }
     };
 
@@ -100,7 +103,7 @@ public class Main implements Logging {
                     .info("--input=<path>                      Sets the input world path (required)")
                     .info("--dim=<dimension id>                Sets the dimension (world) id to scan. default=0")
                     .info("--verbose                           Print status updates to console")
-                    .info("--format=<format>                   Sets the format that the output data will be written in. default=csv")
+                    .info("--format=<format>                   Sets the format that the output data will be written in. valid formats=csv,csv_gz default=csv")
                     .info("--output=<path>                     Set the root directory that output data will be written to. default=./scanresult/")
                     .info("")
                     .info("MODULES")
@@ -243,26 +246,10 @@ public class Main implements Logging {
             scanner.addProcessor((current, estimatedTotal, column) -> count.set(current));
             modules.forEach(scanner::addProcessor);
             scanner.run(true);
+
+            logger.info("Finishing...");
+            modules.forEach((IOConsumer<SearchModule>) SearchModule::close);
         }
-        logger.info("Finished scan. Saving data...");
-        /*try (PrintStream out = new PrintStream(new FileOutputStream(outFile), false, "UTF-8")) {
-            JsonObject obj = new JsonObject();
-            Map<String, Collection<SearchModule>> byName = new HashMap<>();
-            modules.forEach(m -> byName.computeIfAbsent(m.getSaveName(), n -> new ArrayList<>()).add(m));
-            byName.forEach((name, withName) -> {
-                JsonArray array = new JsonArray();
-                withName.forEach(m -> {
-                    JsonObject object = new JsonObject();
-                    object.addProperty("name", m.toString());
-                    JsonObject subObject = new JsonObject();
-                    object.add("data", subObject);
-                    m.saveData(subObject);
-                    array.add(object);
-                });
-                obj.add(name, array);
-            });
-            gson.toJson(obj, out);
-        }*/
         time = System.currentTimeMillis() - time;
         logger.success("Done!").success(
                 "Scanned %d chunks (across %d regions) in %dh:%dm:%ds",

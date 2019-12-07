@@ -16,18 +16,23 @@
 package net.daporkchop.savesearcher.output.csv;
 
 import lombok.NonNull;
-import net.daporkchop.lib.common.function.PFunctions;
+import net.daporkchop.lib.binary.stream.file.BufferingFileOutput;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.pool.handle.DefaultThreadHandledPool;
 import net.daporkchop.lib.common.pool.handle.Handle;
 import net.daporkchop.lib.common.pool.handle.HandledPool;
+import net.daporkchop.lib.common.system.OperatingSystem;
+import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.reflection.PField;
 import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,15 +44,17 @@ import java.util.stream.Collectors;
 /**
  * @author DaPorkchop_
  */
-public final class CSVOutputHandle implements OutputHandle {
+public class CSVOutputHandle implements OutputHandle {
     protected static final HandledPool<StringBuilder> BUILDER_CACHE = new DefaultThreadHandledPool<>(StringBuilder::new, 2);
+
+    protected static final String LINE_SEPARATOR = PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows ? "\r\n" : "\n";
 
     protected final File parent;
 
     protected Class<?>                       clazz;
     protected List<PField<?>>                fields;
     protected List<Function<Object, String>> mappers;
-    protected PrintStream                    out;
+    protected OutputStream                   out;
 
     public CSVOutputHandle(@NonNull File parent) {
         this.parent = PFiles.ensureDirectoryExists(parent);
@@ -94,12 +101,16 @@ public final class CSVOutputHandle implements OutputHandle {
                 .collect(Collectors.toList());
 
         try {
-            this.out = new PrintStream(new File(this.parent, module + ".csv"), "UTF-8");
+            this.out = this.createOutputStream(module);
 
-            this.out.println(this.fields.stream().map(PField::getName).collect(() -> new StringJoiner(","), StringJoiner::add, StringJoiner::merge));
+            this.out.write(this.fields.stream().map(PField::getName).collect(() -> new StringJoiner(","), StringJoiner::add, StringJoiner::merge).toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected OutputStream createOutputStream(@NonNull SearchModule module) throws IOException {
+        return new FileOutputStream(new File(this.parent, module + ".csv"));
     }
 
     @Override
@@ -124,7 +135,11 @@ public final class CSVOutputHandle implements OutputHandle {
                 builder.append(CSVUtil.escape(mapper.apply(data))).append(',');
             }
             builder.setLength(builder.length() - 1);
-            this.out.println(builder);
+            builder.append(LINE_SEPARATOR);
+
+            this.out.write(builder.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
