@@ -17,6 +17,8 @@ package net.daporkchop.savesearcher;
 
 import net.daporkchop.lib.common.function.io.IOConsumer;
 import net.daporkchop.lib.common.misc.file.PFiles;
+import net.daporkchop.lib.common.system.OperatingSystem;
+import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.math.vector.i.Vec2i;
@@ -124,6 +126,10 @@ public class Main implements Logging {
                     .info("https://github.com/DaMatrix/SaveSearcher")
                     .info("")
                     .info("Starting...");
+        }
+
+        if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
+            logger.alert("Windows detected!\nUsing stupid file names because your operating system is too stupid to handle good ones...");
         }
 
         File worldFile = null;

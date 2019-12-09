@@ -110,7 +110,11 @@ public class CSVOutputHandle implements OutputHandle {
     }
 
     protected OutputStream createOutputStream(@NonNull SearchModule module) throws IOException {
-        return new FileOutputStream(new File(this.parent, module + ".csv"));
+        String name = module + ".csv.gz";
+        if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
+            name = name.replace(':', '_');
+        }
+        return new FileOutputStream(new File(this.parent, name));
     }
 
     @Override

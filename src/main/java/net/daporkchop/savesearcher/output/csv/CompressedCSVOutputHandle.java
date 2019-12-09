@@ -16,6 +16,8 @@
 package net.daporkchop.savesearcher.output.csv;
 
 import lombok.NonNull;
+import net.daporkchop.lib.common.system.OperatingSystem;
+import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.unsafe.PUnsafe;
 import net.daporkchop.savesearcher.module.SearchModule;
 
@@ -35,6 +37,10 @@ public final class CompressedCSVOutputHandle extends CSVOutputHandle {
 
     @Override
     protected OutputStream createOutputStream(@NonNull SearchModule module) throws IOException {
-        return new GZIPOutputStream(new FileOutputStream(new File(this.parent, module + ".csv.gz")), PUnsafe.PAGE_SIZE);
+        String name = module + ".csv.gz";
+        if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
+            name = name.replace(':', '_');
+        }
+        return new GZIPOutputStream(new FileOutputStream(new File(this.parent, name)), PUnsafe.PAGE_SIZE);
     }
 }

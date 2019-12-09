@@ -66,7 +66,7 @@ public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.Spaw
 
     @Override
     public String toString() {
-        return this.filterId == null ? "Spawners" : String.format("Spawners(%s)", this.filterId);
+        return this.filterId == null ? "Spawners" : String.format("Spawners (id=%s)", this.filterId);
     }
 
     @Override
