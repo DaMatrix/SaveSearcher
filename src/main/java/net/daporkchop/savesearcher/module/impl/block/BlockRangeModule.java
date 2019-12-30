@@ -15,7 +15,6 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
-import com.google.gson.JsonObject;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.math.vector.i.Vec3i;
@@ -23,7 +22,6 @@ import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
-import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
@@ -32,10 +30,10 @@ import net.daporkchop.savesearcher.output.OutputHandle;
 @RequiredArgsConstructor
 final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
     protected final ResourceLocation searchName;
-    protected final int meta;
-    protected final int minY;
-    protected final int maxY;
-    protected int id;
+    protected final int              meta;
+    protected final int              minY;
+    protected final int              maxY;
+    protected       int              id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
@@ -53,10 +51,10 @@ final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
         final int maxY = this.maxY;
         final int minY = this.minY;
 
-        for (int x = 15; x >= 0; x--) {
-            for (int z = 15; z >= 0; z--) {
-                for (int y = maxY; y >= minY; y--) {
-                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
+        for (int y = maxY; y >= minY; y--) {
+            for (int x = 15; x >= 0; x--) {
+                for (int z = 15; z >= 0; z--) {
+                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta)) {
                         handle.accept(new Vec3i(chunk.minX() + x, y, chunk.minZ() + z));
                     }
                 }
@@ -66,7 +64,7 @@ final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
 
     @Override
     public String toString() {
-        if (this.meta == -1)    {
+        if (this.meta == -1) {
             return String.format("Block - Ranged (id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
         } else {
             return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);

@@ -15,89 +15,21 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
-import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
-import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.PositionDataXZ;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class BlockModule extends AbstractSearchModule<Vec3i> {
-    public static SearchModule find(@NonNull String[] args) {
-        ResourceLocation id = null;
-        int meta = -1;
-        int min = 0;
-        int max = 255;
-        boolean invert = false;
-        boolean chunkinvert = false;
-
-        for (String s : args) {
-            if (s.isEmpty()) {
-                continue;
-            }
-            String[] split = s.split("=");
-            if (split.length != 2) {
-                throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-            switch (split[0]) {
-                case "id":
-                    id = new ResourceLocation(split[1]);
-                    break;
-                case "meta":
-                    meta = Integer.parseInt(split[1]);
-                    if (meta > 15 || meta < 0) {
-                        throw new IllegalArgumentException(String.format("Invalid meta: %d (must be in range 0-15)", meta));
-                    }
-                    break;
-                case "min":
-                case "minY":
-                    min = Integer.parseInt(split[1]);
-                    break;
-                case "max":
-                case "maxY":
-                    max = Integer.parseInt(split[1]);
-                    break;
-                case "invert":
-                    if (chunkinvert) {
-                        throw new IllegalArgumentException("invert and chunkinvert cannot be used together!");
-                    }
-                    invert = true;
-                    break;
-                case "chunkinvert":
-                    if (invert) {
-                        throw new IllegalArgumentException("invert and chunkinvert cannot be used together!");
-                    }
-                    chunkinvert = true;
-                    break;
-                default:
-                    throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
-            }
-        }
-
-        if (id == null) {
-            throw new IllegalArgumentException("No id given!");
-        } else if (min > max) {
-            throw new IllegalArgumentException(String.format("Min Y must be less than or equal to max Y! (min=%d, max=%d)", min, max));
-        } else if (min == 0 && max == 255) {
-            return chunkinvert
-                    ? new ChunkInverseBlockModule(id, meta)
-                    : invert ? new InverseBlockModule(id, meta) : new BlockModule(id, meta);
-        } else {
-            return chunkinvert
-                    ? new ChunkInverseBlockRangeModule(id, meta, min, max)
-                    : invert ? new InverseBlockRangeModule(id, meta, min, max) : new BlockRangeModule(id, meta, min, max);
-        }
-    }
-
+@RequiredArgsConstructor
+final class ChunkInverseBlockModule extends AbstractSearchModule<PositionDataXZ> {
     protected final ResourceLocation searchName;
     protected final int              meta;
     protected       int              id;
@@ -119,26 +51,31 @@ public final class BlockModule extends AbstractSearchModule<Vec3i> {
         for (int sectionY = 15; sectionY >= 0; sectionY--) {
             Section section = chunk.section(sectionY);
             if (section == null) {
-                continue;
+                if (id == 0) {
+                    return;
+                } else {
+                    continue;
+                }
             }
             for (int x = 15; x >= 0; x--) {
                 for (int y = 15; y >= 0; y--) {
                     for (int z = 15; z >= 0; z--) {
                         if (section.getBlockId(x, y, z) == id && (meta == -1 || section.getBlockMeta(x, y, z) == meta)) {
-                            handle.accept(new Vec3i(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z));
+                            return;
                         }
                     }
                 }
             }
         }
+        handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
     public String toString() {
         if (this.meta == -1) {
-            return String.format("Block (id=%s)", this.searchName);
+            return String.format("Block - Inverted (chunk, id=%s)", this.searchName);
         } else {
-            return String.format("Block (id=%s, meta=%d)", this.searchName, this.meta);
+            return String.format("Block - Inverted (chunk, id=%s, meta=%d)", this.searchName, this.meta);
         }
     }
 
@@ -152,9 +89,8 @@ public final class BlockModule extends AbstractSearchModule<Vec3i> {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        } else if (obj.getClass() == BlockModule.class) {
-            //don't do instanceof check, since we only want to check if the modules are exactly identical
-            BlockModule other = (BlockModule) obj;
+        } else if (obj.getClass() == ChunkInverseBlockModule.class) {
+            ChunkInverseBlockModule other = (ChunkInverseBlockModule) obj;
             return this.searchName.equals(other.searchName) && this.meta == other.meta;
         } else {
             return false;

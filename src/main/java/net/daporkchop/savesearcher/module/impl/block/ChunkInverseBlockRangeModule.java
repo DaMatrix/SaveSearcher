@@ -19,10 +19,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
-import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.module.PositionDataXZ;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
@@ -30,9 +28,11 @@ import net.daporkchop.savesearcher.output.OutputHandle;
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
-final class InverseBlockModule extends AbstractSearchModule<PositionData> {
+final class ChunkInverseBlockRangeModule extends AbstractSearchModule<PositionDataXZ> {
     protected final ResourceLocation searchName;
     protected final int              meta;
+    protected final int              minY;
+    protected final int              maxY;
     protected       int              id;
 
     @Override
@@ -48,46 +48,43 @@ final class InverseBlockModule extends AbstractSearchModule<PositionData> {
     protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
         final int id = this.id;
         final int meta = this.meta;
+        final int maxY = this.maxY;
+        final int minY = this.minY;
 
-        for (int sectionY = 15; sectionY >= 0; sectionY--) {
-            Section section = chunk.section(sectionY);
-            if (section == null) {
-                section = Section.EMPTY_SECTION;
-            }
+        for (int y = maxY; y >= minY; y--) {
             for (int x = 15; x >= 0; x--) {
-                for (int y = 15; y >= 0; y--) {
-                    for (int z = 15; z >= 0; z--) {
-                        if (section.getBlockId(x, y, z) != id && (meta == -1 || section.getBlockMeta(x, y, z) != meta)) {
-                            handle.accept(new PositionData(chunk.minX() + x, (sectionY << 4) + y, chunk.minZ() + z));
-                        }
+                for (int z = 15; z >= 0; z--) {
+                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta)) {
+                        return;
                     }
                 }
             }
         }
+
+        handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
     public String toString() {
         if (this.meta == -1) {
-            return String.format("Block - Inverted (id=%s)", this.searchName);
+            return String.format("Block - Inverted,Ranged (chunk, id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
         } else {
-            return String.format("Block - Inverted (id=%s, meta=%d)", this.searchName, this.meta);
+            return String.format("Block - Inverted,Ranged (chunk, id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);
         }
     }
 
     @Override
     public int hashCode() {
-        //id is only computed later and can change dynamically, so we don't want to include it in the hash code
-        return this.searchName.hashCode() * 31 + this.meta;
+        return ((this.searchName.hashCode() * 31 + this.meta) * 31 + this.maxY) * 31 + this.minY;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        } else if (obj.getClass() == InverseBlockModule.class) {
-            InverseBlockModule other = (InverseBlockModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta;
+        } else if (obj.getClass() == ChunkInverseBlockRangeModule.class) {
+            ChunkInverseBlockRangeModule other = (ChunkInverseBlockRangeModule) obj;
+            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
         } else {
             return false;
         }

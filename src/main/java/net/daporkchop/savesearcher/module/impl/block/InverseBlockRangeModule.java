@@ -22,19 +22,18 @@ import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
-import net.daporkchop.savesearcher.module.PositionDataXZ;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
-final class InverseBlockRangeModule extends AbstractSearchModule<PositionDataXZ> {
+final class InverseBlockRangeModule extends AbstractSearchModule<PositionData> {
     protected final ResourceLocation searchName;
-    protected final int meta;
-    protected final int minY;
-    protected final int maxY;
-    protected int id;
+    protected final int              meta;
+    protected final int              minY;
+    protected final int              maxY;
+    protected       int              id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
@@ -52,22 +51,20 @@ final class InverseBlockRangeModule extends AbstractSearchModule<PositionDataXZ>
         final int maxY = this.maxY;
         final int minY = this.minY;
 
-        for (int x = 15; x >= 0; x--) {
-            for (int z = 15; z >= 0; z--) {
-                for (int y = maxY; y >= minY; y--) {
-                    if (chunk.getBlockId(x, y, z) == id && (meta == -1 || chunk.getBlockMeta(x, y, z) == meta))  {
-                        return;
+        for (int y = maxY; y >= minY; y--) {
+            for (int x = 15; x >= 0; x--) {
+                for (int z = 15; z >= 0; z--) {
+                    if (chunk.getBlockId(x, y, z) != id && (meta == -1 || chunk.getBlockMeta(x, y, z) != meta)) {
+                        handle.accept(new PositionData(x, y, z));
                     }
                 }
             }
         }
-
-        handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
     public String toString() {
-        if (this.meta == -1)    {
+        if (this.meta == -1) {
             return String.format("Block - Inverted,Ranged (id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
         } else {
             return String.format("Block - Inverted,Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);
