@@ -16,6 +16,8 @@
 package net.daporkchop.savesearcher.output.csv;
 
 import lombok.NonNull;
+import net.daporkchop.lib.binary.oio.writer.UTF8FileWriter;
+import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.unsafe.PUnsafe;
@@ -25,6 +27,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -36,11 +39,11 @@ public final class CompressedCSVOutputHandle extends CSVOutputHandle {
     }
 
     @Override
-    protected OutputStream createOutputStream(@NonNull SearchModule module) throws IOException {
+    protected Writer createWriter(@NonNull SearchModule module) throws IOException {
         String name = module + ".csv.gz";
         if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
             name = name.replace(':', '_');
         }
-        return new GZIPOutputStream(new FileOutputStream(new File(this.parent, name)), PUnsafe.PAGE_SIZE);
+        return new UTF8FileWriter(new GZIPOutputStream(new FileOutputStream(PFiles.ensureFileExists(new File(this.parent, name)))));
     }
 }

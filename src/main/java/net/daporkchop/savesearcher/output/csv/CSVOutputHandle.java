@@ -16,12 +16,14 @@
 package net.daporkchop.savesearcher.output.csv;
 
 import lombok.NonNull;
+import net.daporkchop.lib.binary.oio.writer.UTF8FileWriter;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.pool.handle.DefaultThreadHandledPool;
 import net.daporkchop.lib.common.pool.handle.Handle;
 import net.daporkchop.lib.common.pool.handle.HandledPool;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
+import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.reflection.PField;
 import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
@@ -31,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,14 +49,12 @@ import java.util.stream.Collectors;
 public class CSVOutputHandle implements OutputHandle {
     protected static final HandledPool<StringBuilder> BUILDER_CACHE = new DefaultThreadHandledPool<>(StringBuilder::new, 2);
 
-    protected static final String LINE_SEPARATOR = PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows ? "\r\n" : "\n";
-
     protected final File parent;
 
     protected Class<?>                       clazz;
     protected List<PField<?>>                fields;
     protected List<Function<Object, String>> mappers;
-    protected OutputStream                   out;
+    protected Writer                         writer;
 
     public CSVOutputHandle(@NonNull File parent) {
         this.parent = PFiles.ensureDirectoryExists(parent);
@@ -100,28 +101,29 @@ public class CSVOutputHandle implements OutputHandle {
                 .collect(Collectors.toList());
 
         try {
-            this.out = this.createOutputStream(module);
+            this.writer = this.createWriter(module);
 
-            this.out.write(this.fields.stream().map(PField::getName).collect(() -> new StringJoiner(","), StringJoiner::add, StringJoiner::merge).toString().getBytes(StandardCharsets.UTF_8));
+            this.writer.append(this.fields.stream().map(PField::getName).collect(() -> new StringJoiner(","), StringJoiner::add, StringJoiner::merge).toString());
+            this.writer.append(PlatformInfo.OPERATING_SYSTEM.lineEnding());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected OutputStream createOutputStream(@NonNull SearchModule module) throws IOException {
-        String name = module + ".csv.gz";
+    protected Writer createWriter(@NonNull SearchModule module) throws IOException {
+        String name = module + ".csv";
         if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
             name = name.replace(':', '_');
         }
-        return new FileOutputStream(new File(this.parent, name));
+        return new UTF8FileWriter(PFiles.ensureFileExists(new File(this.parent, name)));
     }
 
     @Override
     public void close() throws IOException {
         try {
-            this.out.close();
+            this.writer.close();
         } finally {
-            this.out = null;
+            this.writer = null;
         }
     }
 
@@ -138,9 +140,11 @@ public class CSVOutputHandle implements OutputHandle {
                 builder.append(CSVUtil.escape(mapper.apply(data))).append(',');
             }
             builder.setLength(builder.length() - 1);
-            builder.append(LINE_SEPARATOR);
 
-            this.out.write(builder.toString().getBytes(StandardCharsets.UTF_8));
+            synchronized (this) {
+                this.writer.append(builder);
+                this.writer.append(PlatformInfo.OPERATING_SYSTEM.lineEnding());
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
