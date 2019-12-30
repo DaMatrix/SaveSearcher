@@ -41,6 +41,7 @@ import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
 import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
+import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
@@ -66,6 +67,7 @@ public class Main implements Logging {
     private static final Map<String, Function<String[], SearchModule>> REGISTERED_MODULES = new HashMap<String, Function<String[], SearchModule>>() {
         {
             this.put("--block", BlockModule::find);
+            this.put("--count", CountBlocksModule::find);
             this.put("--doublechest", DoubleChestModule::new);
             this.put("--emptychunks", EmptyChunksModule::new);
             this.put("--netherchunks", NetherChunksModule::new);
@@ -113,6 +115,8 @@ public class Main implements Logging {
                     .info("      (,min=<min>)(,max=<max>)        it's ignored. Both min and max values are inclusive, and default to min=0 and max=255 if not given. Adding the invert flag will cause")
                     .info("      (,invert)(,chunkinvert)         a search for block coordinates where the given block id+meta does not occur. Adding the chunkinvert flag will cause a search for chunk")
                     .info("                                      coordinates where the given block id+meta does not occur. invert and chunkinvert may not be used together.")
+                    .info("--count,type=<type>(,id=<id>)       Counts the number of occurrences of the given type in each chunk, saving chunk coordinates and count. Valid types: block, tileentity. id")
+                    .info("      (,meta=<meta>)                  is required for block, optional for tileentity. meta is optional for block, not allowed for tileentity.")
                     .info("--doublechest                       Scan for double chests, saving coordinates and whether or not they're trapped.")
                     .warn("                                      WARNING! Can cause significant slowdown!")
                     .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")

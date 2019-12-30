@@ -70,7 +70,7 @@ public final class SignModule extends AbstractSearchModule<SignModule.SignData> 
         return obj instanceof SignModule;
     }
 
-    protected class SignData extends PositionData {
+    protected final class SignData extends PositionData {
         public final String line1;
         public final String line2;
         public final String line3;
