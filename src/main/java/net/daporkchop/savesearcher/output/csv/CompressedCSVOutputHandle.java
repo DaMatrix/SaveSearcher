@@ -1,7 +1,7 @@
 /*
  * Adapted from the Wizardry License
  *
- * Copyright (c) 2018-2019 DaPorkchop_ and contributors
+ * Copyright (c) 2018-2020 DaPorkchop_ and contributors
  *
  * Permission is hereby granted to any persons and/or organizations using this software to copy, modify, merge, publish, and distribute it. Said persons and/or organizations are not allowed to use the software or any derivatives of the work for commercial use or any other means to generate income, nor are they allowed to claim this software as their own.
  *
@@ -16,6 +16,7 @@
 package net.daporkchop.savesearcher.output.csv;
 
 import lombok.NonNull;
+import net.daporkchop.lib.binary.oio.PAppendable;
 import net.daporkchop.lib.binary.oio.writer.UTF8FileWriter;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.system.OperatingSystem;
@@ -39,11 +40,12 @@ public final class CompressedCSVOutputHandle extends CSVOutputHandle {
     }
 
     @Override
-    protected Writer createWriter(@NonNull SearchModule module) throws IOException {
-        String name = module + ".csv.gz";
-        if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
-            name = name.replace(':', '_');
-        }
-        return new UTF8FileWriter(new GZIPOutputStream(new FileOutputStream(PFiles.ensureFileExists(new File(this.parent, name)))));
+    protected PAppendable createWriter(@NonNull File file) throws IOException {
+        return new UTF8FileWriter(new GZIPOutputStream(new FileOutputStream(file)), PlatformInfo.OPERATING_SYSTEM.lineEnding(), false);
+    }
+
+    @Override
+    protected String getFileSuffix() {
+        return ".csv.gz";
     }
 }

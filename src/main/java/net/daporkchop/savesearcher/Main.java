@@ -1,7 +1,7 @@
 /*
  * Adapted from the Wizardry License
  *
- * Copyright (c) 2018-2019 DaPorkchop_ and contributors
+ * Copyright (c) 2018-2020 DaPorkchop_ and contributors
  *
  * Permission is hereby granted to any persons and/or organizations using this software to copy, modify, merge, publish, and distribute it. Said persons and/or organizations are not allowed to use the software or any derivatives of the work for commercial use or any other means to generate income, nor are they allowed to claim this software as their own.
  *
@@ -20,7 +20,6 @@ import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
 import net.daporkchop.lib.logging.LogAmount;
-import net.daporkchop.lib.logging.Logging;
 import net.daporkchop.lib.math.vector.i.Vec2i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
 import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
@@ -60,10 +59,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import static net.daporkchop.lib.logging.Logging.*;
+
 /**
  * @author DaPorkchop_
  */
-public class Main implements Logging {
+public class Main {
     private static final Map<String, Function<String[], SearchModule>> REGISTERED_MODULES = new HashMap<String, Function<String[], SearchModule>>() {
         {
             this.put("--block", BlockModule::find);
@@ -133,7 +134,7 @@ public class Main implements Logging {
                     .info("Starting...");
         }
 
-        if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows)   {
+        if (PlatformInfo.OPERATING_SYSTEM == OperatingSystem.Windows) {
             logger.alert("Windows detected!\nUsing stupid file names because your operating system is too stupid to handle good ones...");
         }
 
@@ -195,17 +196,16 @@ public class Main implements Logging {
             System.exit(1);
         }
 
-        PFiles.ensureDirectoryExists(outDir);
-        if (outDir.listFiles().length != 0) {
+        if (PFiles.checkDirectoryExists(outDir)) {
             if (overwrite) {
                 logger.warn("Deleting contents of \"%s\" as -o is enabled...", outDir.getAbsolutePath());
+                PFiles.rmContents(outDir);
             } else {
                 logger.error("Output directory \"%s\" is not empty!", outDir.getAbsolutePath())
                         .error("Use -o to forcibly delete existing files, or delete them manually.");
                 System.exit(1);
             }
         }
-        PFiles.rmContents(outDir);
 
         if (!REGISTERED_OUTPUTS.containsKey(formatName)) {
             logger.error("Unknown output format: \"%s\"!")
