@@ -16,7 +16,7 @@
 package net.daporkchop.savesearcher.output.csv;
 
 import lombok.NonNull;
-import net.daporkchop.lib.binary.oio.PAppendable;
+import net.daporkchop.lib.binary.oio.appendable.PAppendable;
 import net.daporkchop.lib.binary.oio.writer.UTF8FileWriter;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.pool.handle.DefaultThreadHandledPool;
