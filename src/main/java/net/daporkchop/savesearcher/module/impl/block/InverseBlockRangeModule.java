@@ -55,7 +55,7 @@ final class InverseBlockRangeModule extends AbstractSearchModule<PositionData> {
             for (int x = 15; x >= 0; x--) {
                 for (int z = 15; z >= 0; z--) {
                     if (chunk.getBlockId(x, y, z) != id && (meta == -1 || chunk.getBlockMeta(x, y, z) != meta)) {
-                        handle.accept(new PositionData(x, y, z));
+                        handle.accept(new PositionData(chunk.minX() + x, y, chunk.minZ() + z));
                     }
                 }
             }
