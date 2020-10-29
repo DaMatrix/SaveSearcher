@@ -67,16 +67,6 @@ pipeline {
                 }
             }
         }
-        stage("Test") {
-            steps {
-                sh "./gradlew test"
-            }
-            post {
-                success {
-                    junit "**/build/test-results/**/*.xml"
-                }
-            }
-        }
     }
 
     post {
