@@ -40,6 +40,7 @@ import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
+import net.daporkchop.savesearcher.module.impl.EntityModule;
 import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
 import net.daporkchop.savesearcher.module.impl.SpawnerModule;
@@ -75,6 +76,7 @@ public class Main {
             this.put("--count", CountBlocksModule::find);
             this.put("--doublechest", DoubleChestModule::new);
             this.put("--emptychunks", EmptyChunksModule::new);
+            this.put("--entity", EntityModule::new);
             this.put("--netherchunks", NetherChunksModule::new);
             this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
@@ -127,7 +129,8 @@ public class Main {
                     .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                       Scan for empty (air-only) chunks.")
                     .info("--sign                              Scan for sign blocks, saving coordinates and text.")
-                    .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.");
+                    .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
+                    .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.");
             return;
         } else {
             logger.addFile(new File("savesearcher.log").getAbsoluteFile(), true, LogAmount.DEBUG)

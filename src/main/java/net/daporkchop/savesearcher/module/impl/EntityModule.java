@@ -20,22 +20,24 @@
 package net.daporkchop.savesearcher.module.impl;
 
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.minecraft.entity.Entity;
+import net.daporkchop.lib.minecraft.entity.impl.UnknownEntity;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
-import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.output.OutputHandle;
-import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
+import net.daporkchop.savesearcher.util.NBTHelper;
 
 import java.util.Objects;
 
 /**
  * @author DaPorkchop_
  */
-public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.SpawnerData> {
+public final class EntityModule extends AbstractSearchModule<EntityModule.EntityData> {
     protected final ResourceLocation filterId;
 
-    public SpawnerModule(String[] args) {
+    public EntityModule(String[] args) {
         switch (args.length) {
             case 1:
                 this.filterId = null;
@@ -44,59 +46,58 @@ public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.Spaw
                 this.filterId = new ResourceLocation(args[1]);
                 break;
             default:
-                throw new IllegalArgumentException("--spawner must be called with either no arguments or the entity ID of the spawner type to search for!");
+                throw new IllegalArgumentException("--entity must be called with either no arguments or the entity ID to search for!");
         }
     }
 
     @Override
     protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
         if (this.filterId == null) {
-            chunk.tileEntities().stream()
-                    .filter(TileEntitySpawner.class::isInstance)
-                    .map(te -> new SpawnerData((TileEntitySpawner) te))
+            chunk.entities().stream()
+                    .map(EntityData::new)
                     .forEach(handle::accept);
         } else {
-            chunk.tileEntities().stream()
-                    .filter(TileEntitySpawner.class::isInstance)
-                    .map(TileEntitySpawner.class::cast)
-                    .filter(te -> te.canSpawn(this.filterId))
-                    .map(SpawnerData::new)
+            chunk.entities().stream()
+                    .filter(e -> this.filterId.equals(e.id()))
+                    .map(EntityData::new)
                     .forEach(handle::accept);
         }
     }
 
     @Override
     public String toString() {
-        return this.filterId == null ? "Spawners" : String.format("Spawners (id=%s)", this.filterId);
+        return this.filterId == null ? "Entities" : String.format("Entities (id=%s)", this.filterId);
     }
 
     @Override
     public int hashCode() {
-        return this.filterId == null ? SpawnerModule.class.hashCode() : this.filterId.hashCode();
+        return this.filterId == null ? EntityModule.class.hashCode() : this.filterId.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        } else if (obj instanceof SpawnerModule) {
-            return Objects.equals(this.filterId, ((SpawnerModule) obj).filterId);
+        } else if (obj instanceof EntityModule) {
+            return Objects.equals(this.filterId, ((EntityModule) obj).filterId);
         } else {
             return false;
         }
     }
 
-    protected static final class SpawnerData extends PositionData {
+    @RequiredArgsConstructor
+    protected static final class EntityData {
+        @NonNull
         public final ResourceLocation id;
+        public final double x;
+        public final double y;
+        public final double z;
+        @NonNull
+        public final String nbt;
 
-        public SpawnerData(@NonNull TileEntitySpawner te) {
-            super(te);
-
-            if (te.entries().size() != 1) {
-                throw new IllegalArgumentException(String.format("Spawner (%d,%d,%d) has %d entries!", te.getX(), te.getY(), te.getZ(), te.entries().size()));
-            }
-
-            this.id = te.entries().get(0).id();
+        public EntityData(@NonNull Entity entity) {
+            this(entity.id(), entity.getX(), entity.getY(), entity.getZ(),
+                    entity instanceof UnknownEntity ? NBTHelper.toJson(((UnknownEntity) entity).data()) : "{}");
         }
     }
 }
