@@ -23,6 +23,7 @@ import net.daporkchop.lib.common.function.io.IOConsumer;
 import net.daporkchop.lib.common.misc.file.PFiles;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
+import net.daporkchop.lib.compression.zlib.Zlib;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.math.vector.i.Vec2i;
 import net.daporkchop.lib.minecraft.region.WorldScanner;
@@ -36,7 +37,6 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionFile;
 import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
-import net.daporkchop.lib.natives.PNatives;
 import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
@@ -96,7 +96,7 @@ public class Main {
             System.exit(1);
         });
 
-        if (!PNatives.ZLIB.isNative()) {
+        if (!Zlib.PROVIDER.isNative()) {
             throw new IllegalStateException("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32");
         }
 

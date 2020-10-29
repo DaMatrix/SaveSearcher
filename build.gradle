@@ -28,7 +28,7 @@ ext {
     gsonVersion = "2.8.5"
     junitVersion = "4.12"
     lombokVersion = "1.16.20"
-    porklibVersion = "0.5.0-SNAPSHOT"
+    porklibVersion = "0.5.4-SNAPSHOT"
 }
 
 group "net.daporkchop"
@@ -43,7 +43,6 @@ tasks.withType(JavaCompile) {
 }
 
 repositories {
-    mavenLocal()
     maven {
         name = "DaPorkchop_"
         url = "https://maven.daporkchop.net/"
@@ -72,16 +71,6 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 }
 
-/*processResources    {
-    //this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        expand "version": project.version
-    }
-}*/
-
 jar {
     from {
         configurations.shade.collect {
@@ -95,7 +84,7 @@ jar {
     }
 
     manifest {
-        attributes "Implementation-Title": "DaPorkchop_ok",
+        attributes "Implementation-Title": "DaPorkchop_",
                 "Implementation-Version": "$savesearcherVersion",
                 "Main-Class": "net.daporkchop.savesearcher.Main"
     }
