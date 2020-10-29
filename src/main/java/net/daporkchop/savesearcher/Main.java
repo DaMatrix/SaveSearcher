@@ -91,7 +91,7 @@ public class Main {
     };
 
     public static void main(String... args) throws IOException {
-        logger.enableANSI().setLogAmount(LogAmount.DEBUG);
+        logger.setLogAmount(LogAmount.DEBUG).enableANSI();
 
         Thread.currentThread().setUncaughtExceptionHandler((thread, ex) -> {
             logger.alert(ex);
