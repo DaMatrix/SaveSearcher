@@ -29,8 +29,8 @@ import java.io.IOException;
  *
  * @author DaPorkchop_
  */
-public interface OutputHandle extends AutoCloseable {
-    void init(@NonNull SearchModule module);
+public interface OutputHandle<R> extends AutoCloseable {
+    void init(@NonNull SearchModule<R> module);
 
     @Override
     void close() throws IOException;

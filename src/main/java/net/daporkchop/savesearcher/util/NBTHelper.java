@@ -30,18 +30,18 @@ import lombok.experimental.UtilityClass;
 import net.daporkchop.lib.common.pool.handle.Handle;
 import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.nbt.tag.Tag;
-import net.daporkchop.lib.nbt.tag.notch.ByteArrayTag;
-import net.daporkchop.lib.nbt.tag.notch.ByteTag;
-import net.daporkchop.lib.nbt.tag.notch.CompoundTag;
-import net.daporkchop.lib.nbt.tag.notch.DoubleTag;
-import net.daporkchop.lib.nbt.tag.notch.FloatTag;
-import net.daporkchop.lib.nbt.tag.notch.IntArrayTag;
-import net.daporkchop.lib.nbt.tag.notch.IntTag;
-import net.daporkchop.lib.nbt.tag.notch.ListTag;
-import net.daporkchop.lib.nbt.tag.notch.LongArrayTag;
-import net.daporkchop.lib.nbt.tag.notch.LongTag;
-import net.daporkchop.lib.nbt.tag.notch.ShortTag;
-import net.daporkchop.lib.nbt.tag.notch.StringTag;
+import net.daporkchop.lib.nbt.tag.ByteArrayTag;
+import net.daporkchop.lib.nbt.tag.ByteTag;
+import net.daporkchop.lib.nbt.tag.CompoundTag;
+import net.daporkchop.lib.nbt.tag.DoubleTag;
+import net.daporkchop.lib.nbt.tag.FloatTag;
+import net.daporkchop.lib.nbt.tag.IntArrayTag;
+import net.daporkchop.lib.nbt.tag.IntTag;
+import net.daporkchop.lib.nbt.tag.ListTag;
+import net.daporkchop.lib.nbt.tag.LongArrayTag;
+import net.daporkchop.lib.nbt.tag.LongTag;
+import net.daporkchop.lib.nbt.tag.ShortTag;
+import net.daporkchop.lib.nbt.tag.StringTag;
 
 import java.io.IOException;
 
@@ -75,19 +75,19 @@ public class NBTHelper {
             ((ListTag<? extends Tag>) nbt).forEach(tag -> array.add(toJson0(tag)));
             return array;
         } else if (nbt instanceof ByteTag) {
-            return new JsonPrimitive(((ByteTag) nbt).getValue());
+            return new JsonPrimitive(((ByteTag) nbt).value());
         } else if (nbt instanceof DoubleTag) {
-            return new JsonPrimitive(((DoubleTag) nbt).getValue());
+            return new JsonPrimitive(((DoubleTag) nbt).value());
         } else if (nbt instanceof FloatTag) {
-            return new JsonPrimitive(((FloatTag) nbt).getValue());
+            return new JsonPrimitive(((FloatTag) nbt).value());
         } else if (nbt instanceof IntTag) {
-            return new JsonPrimitive(((IntTag) nbt).getValue());
+            return new JsonPrimitive(((IntTag) nbt).value());
         } else if (nbt instanceof LongTag) {
-            return new JsonPrimitive(((LongTag) nbt).getValue());
+            return new JsonPrimitive(((LongTag) nbt).value());
         } else if (nbt instanceof ShortTag) {
-            return new JsonPrimitive(((ShortTag) nbt).getValue());
+            return new JsonPrimitive(((ShortTag) nbt).value());
         } else if (nbt instanceof StringTag) {
-            return new JsonPrimitive(((StringTag) nbt).getValue());
+            return new JsonPrimitive(((StringTag) nbt).value());
         } else if (nbt instanceof ByteArrayTag) {
             JsonArray array = new JsonArray();
             for (byte b : ((ByteArrayTag) nbt).value()) {
@@ -102,7 +102,7 @@ public class NBTHelper {
             return array;
         } else if (nbt instanceof LongArrayTag) {
             JsonArray array = new JsonArray();
-            for (long l : ((LongArrayTag) nbt).getValue()) {
+            for (long l : ((LongArrayTag) nbt).value()) {
                 array.add(l);
             }
             return array;

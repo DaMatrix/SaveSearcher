@@ -23,11 +23,11 @@ import lombok.NonNull;
 import net.daporkchop.lib.binary.oio.appendable.PAppendable;
 import net.daporkchop.lib.binary.oio.writer.UTF8FileWriter;
 import net.daporkchop.lib.common.misc.file.PFiles;
-import net.daporkchop.lib.common.pool.handle.DefaultThreadHandledPool;
 import net.daporkchop.lib.common.pool.handle.Handle;
-import net.daporkchop.lib.common.pool.handle.HandledPool;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
+import net.daporkchop.lib.common.util.GenericMatcher;
+import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.reflection.PField;
 import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
@@ -44,15 +44,13 @@ import java.util.function.Function;
 /**
  * @author DaPorkchop_
  */
-public class CSVOutputHandle implements OutputHandle {
-    protected static final HandledPool<StringBuilder> BUILDER_CACHE = new DefaultThreadHandledPool<>(StringBuilder::new, 2);
-
+public class CSVOutputHandle<R> implements OutputHandle<R> {
     protected final File parent;
 
-    protected Class<?>                   clazz;
-    protected List<PField<?>>            fields;
+    protected Class<?> clazz;
+    protected List<PField<?>> fields;
     protected Function<Object, String>[] mappers;
-    protected PAppendable                output;
+    protected PAppendable output;
 
     public CSVOutputHandle(@NonNull File parent) {
         this.parent = PFiles.ensureDirectoryExists(parent);
@@ -60,10 +58,10 @@ public class CSVOutputHandle implements OutputHandle {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void init(@NonNull SearchModule module) {
+    public void init(@NonNull SearchModule<R> module) {
         this.fields = new ArrayList<>();
 
-        Class<?> clazz = this.clazz = module.dataType();
+        Class<?> clazz = this.clazz = GenericMatcher.find(module.getClass(), SearchModule.class, "R");
         while (clazz != Object.class) {
             int i = 0;
             for (PField field : Arrays.stream(clazz.getDeclaredFields())
@@ -136,8 +134,8 @@ public class CSVOutputHandle implements OutputHandle {
             throw new IllegalArgumentException(String.format("Expected %s but got %s!", this.clazz, data.getClass()));
         }
 
-        try (Handle<StringBuilder> handle = BUILDER_CACHE.get()) {
-            StringBuilder builder = handle.value();
+        try (Handle<StringBuilder> handle = PorkUtil.STRINGBUILDER_POOL.get()) {
+            StringBuilder builder = handle.get();
             builder.setLength(0);
             for (int i = 0, length = this.mappers.length; i < length; i++) {
                 builder.append(this.mappers[i].apply(data)).append(',');

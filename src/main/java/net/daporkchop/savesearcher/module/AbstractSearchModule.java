@@ -22,9 +22,7 @@ package net.daporkchop.savesearcher.module;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
-import net.daporkchop.lib.common.util.GenericMatcher;
-import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.mcworldlib.save.Save;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 import java.io.IOException;
@@ -34,12 +32,11 @@ import java.io.IOException;
  */
 @Getter
 @Accessors(fluent = true)
-public abstract class AbstractSearchModule<S> implements SearchModule {
-    protected final Class<?> dataType = GenericMatcher.find(this.getClass(), AbstractSearchModule.class, "S");
-    protected OutputHandle handle;
+public abstract class AbstractSearchModule<R> implements SearchModule<R> {
+    protected OutputHandle<R> handle;
 
     @Override
-    public void init(@NonNull World world, @NonNull OutputHandle handle) {
+    public void init(@NonNull Save save, @NonNull OutputHandle<R> handle) {
         handle.init(this);
         this.handle = handle;
     }
@@ -48,11 +45,4 @@ public abstract class AbstractSearchModule<S> implements SearchModule {
     public void close() throws IOException {
         this.handle.close();
     }
-
-    @Override
-    public void handle(long current, long estimatedTotal, @NonNull Chunk chunk) {
-        this.processChunk(chunk, this.handle);
-    }
-
-    protected abstract void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle);
 }

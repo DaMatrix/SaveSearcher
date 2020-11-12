@@ -20,8 +20,10 @@
 package net.daporkchop.savesearcher.module;
 
 import lombok.NonNull;
-import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
-import net.daporkchop.lib.minecraft.world.World;
+import net.daporkchop.mcworldlib.save.Save;
+import net.daporkchop.mcworldlib.world.Chunk;
+import net.daporkchop.mcworldlib.world.World;
+import net.daporkchop.mcworldlib.world.section.Section;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 import java.io.IOException;
@@ -29,20 +31,22 @@ import java.io.IOException;
 /**
  * The core of all SaveSearcher modules.
  * <p>
- * Implementations of this do the actual searching of the world.
+ * Modules will only be initialized once, and will be closed after all search operations are completed. Once initialized, implementations
+ * must be safely usable from multiple threads.
  *
+ * @param <R> the result data type
  * @author DaPorkchop_
  */
-public interface SearchModule extends ChunkProcessor, AutoCloseable {
+public interface SearchModule<R> extends AutoCloseable {
     /**
-     * Initializes this module for searching the given world.
+     * Initializes this module for searching the given save.
      * <p>
-     * This may be used to e.g. obtain any numeric block IDs needed.
+     * This may be used to e.g. prefetch numeric block IDs from the registry.
      *
-     * @param world  the world to search in
+     * @param save   the save that is going to be searched
      * @param handle the {@link OutputHandle} that any output data should be given to
      */
-    void init(@NonNull World world, @NonNull OutputHandle handle);
+    void init(@NonNull Save save, @NonNull OutputHandle<R> handle);
 
     /**
      * Closes this module.
@@ -54,8 +58,11 @@ public interface SearchModule extends ChunkProcessor, AutoCloseable {
     @Override
     void close() throws IOException;
 
-    /**
-     * @return the class of values that will be returned by this module
-     */
-    Class<?> dataType();
+    interface ForChunk {
+        void acceptChunk(@NonNull World world, @NonNull Chunk chunk);
+    }
+
+    interface ForSection {
+        void acceptChunk(@NonNull World world, @NonNull Section section);
+    }
 }

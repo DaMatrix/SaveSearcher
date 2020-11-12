@@ -21,35 +21,27 @@ package net.daporkchop.savesearcher;
 
 import net.daporkchop.lib.common.function.io.IOConsumer;
 import net.daporkchop.lib.common.misc.file.PFiles;
+import net.daporkchop.lib.common.misc.string.PStrings;
+import net.daporkchop.lib.common.pool.array.ArrayAllocator;
+import net.daporkchop.lib.common.ref.ReferenceType;
 import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
+import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.compression.zlib.Zlib;
 import net.daporkchop.lib.logging.LogAmount;
 import net.daporkchop.lib.math.vector.i.Vec2i;
-import net.daporkchop.lib.minecraft.region.WorldScanner;
-import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
-import net.daporkchop.lib.minecraft.region.util.NeighboringChunkProcessor;
-import net.daporkchop.lib.minecraft.tileentity.TileEntityRegistry;
-import net.daporkchop.lib.minecraft.world.MinecraftSave;
-import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
-import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionFile;
-import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
-import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
-import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
+import net.daporkchop.mcworldlib.format.anvil.AnvilSaveFormat;
+import net.daporkchop.mcworldlib.format.anvil.AnvilSaveOptions;
+import net.daporkchop.mcworldlib.save.Save;
+import net.daporkchop.mcworldlib.save.SaveOptions;
+import net.daporkchop.mcworldlib.util.Identifier;
+import net.daporkchop.mcworldlib.util.WriteAccess;
+import net.daporkchop.mcworldlib.world.World;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
-import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.impl.EntityModule;
-import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
-import net.daporkchop.savesearcher.module.impl.SpawnerModule;
-import net.daporkchop.savesearcher.module.impl.block.BlockModule;
-import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
-import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 import net.daporkchop.savesearcher.util.Version;
 
 import java.io.File;
@@ -63,6 +55,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 import static net.daporkchop.lib.logging.Logging.*;
 
@@ -72,13 +65,6 @@ import static net.daporkchop.lib.logging.Logging.*;
 public class Main {
     private static final Map<String, Function<String[], SearchModule>> REGISTERED_MODULES = new HashMap<String, Function<String[], SearchModule>>() {
         {
-            this.put("--block", BlockModule::find);
-            this.put("--count", CountBlocksModule::find);
-            this.put("--doublechest", DoubleChestModule::new);
-            this.put("--emptychunks", EmptyChunksModule::new);
-            this.put("--entity", EntityModule::new);
-            this.put("--netherchunks", NetherChunksModule::new);
-            this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
         }
     };
@@ -103,34 +89,35 @@ public class Main {
         }
 
         if (args.length == 0
-                || contains(args, "-h")
-                || contains(args, "--help")
-                || contains(args, "--h")
-                || contains(args, "-help")) {
+            || contains(args, "-h")
+            || contains(args, "--help")
+            || contains(args, "--h")
+            || contains(args, "-help")) {
             logger.info("SaveSearcher v%s", Version.VERSION)
                     .info("Copyright (c) DaPorkchop_")
                     .info("https://github.com/DaMatrix/SaveSearcher")
                     .info("")
                     .info("--input=<path>                      Sets the input world path (required)")
-                    .info("--dim=<dimension id>                Sets the dimension (world) id to scan. default=0")
+                    .info("--dim=<dimension id>                Sets the dimension (world) id to scan. default=minecraft:overworld")
                     .info("--verbose                           Print status updates to console")
                     .info("--format=<format>                   Sets the format that the output data will be written in. valid formats=csv,csv_gz default=csv")
                     .info("--output=<path>                     Set the root directory that output data will be written to. default=./scanresult/")
                     .info("")
                     .info("MODULES")
-                    .info("--block,id=<id>(,meta=<meta>)       Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default")
-                    .info("      (,min=<min>)(,max=<max>)        it's ignored. Both min and max values are inclusive, and default to min=0 and max=255 if not given. Adding the invert flag will cause")
-                    .info("      (,invert)(,chunkinvert)         a search for block coordinates where the given block id+meta does not occur. Adding the chunkinvert flag will cause a search for chunk")
-                    .info("                                      coordinates where the given block id+meta does not occur. invert and chunkinvert may not be used together.")
-                    .info("--count,type=<type>(,id=<id>)       Counts the number of occurrences of the given type in each chunk, saving chunk coordinates and count. Valid types: block, tileentity. id")
-                    .info("      (,meta=<meta>)                  is required for block, optional for tileentity. meta is optional for block, not allowed for tileentity.")
-                    .info("--doublechest                       Scan for double chests, saving coordinates and whether or not they're trapped.")
-                    .warn("                                      WARNING! Can cause significant slowdown!")
-                    .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
-                    .info("--emptychunks                       Scan for empty (air-only) chunks.")
+                    //.info("--block,id=<id>(,meta=<meta>)       Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default")
+                    //.info("      (,min=<min>)(,max=<max>)        it's ignored. Both min and max values are inclusive, and default to min=0 and max=255 if not given. Adding the invert flag will cause")
+                    //.info("      (,invert)(,chunkinvert)         a search for block coordinates where the given block id+meta does not occur. Adding the chunkinvert flag will cause a search for chunk")
+                    //.info("                                      coordinates where the given block id+meta does not occur. invert and chunkinvert may not be used together.")
+                    //.info("--count,type=<type>(,id=<id>)       Counts the number of occurrences of the given type in each chunk, saving chunk coordinates and count. Valid types: block, tileentity. id")
+                    //.info("      (,meta=<meta>)                  is required for block, optional for tileentity. meta is optional for block, not allowed for tileentity.")
+                    //.info("--doublechest                       Scan for double chests, saving coordinates and whether or not they're trapped.")
+                    //.warn("                                      WARNING! Can cause significant slowdown!")
+                    //.info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
+                    //.info("--emptychunks                       Scan for empty (air-only) chunks.")
                     .info("--sign                              Scan for sign blocks, saving coordinates and text.")
-                    .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
-                    .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.");
+            //.info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
+            //.info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
+            ;
             return;
         } else {
             logger.addFile(new File("savesearcher.log").getAbsoluteFile(), true, LogAmount.DEBUG)
@@ -147,7 +134,7 @@ public class Main {
 
         File worldFile = null;
         File outDir = new File("scanresult");
-        int dim = 0;
+        Identifier dim = Identifier.fromString("minecraft:overworld");
         boolean verbose = false;
         boolean overwrite = false;
         String formatName = "csv";
@@ -174,7 +161,7 @@ public class Main {
                     overwrite = true;
                     continue;
                 case "--dim":
-                    dim = Integer.parseInt(split[1]);
+                    dim = Identifier.fromString(split[1]);
                     continue;
                 case "--verbose":
                 case "-v":
@@ -228,42 +215,32 @@ public class Main {
         long time = System.currentTimeMillis();
         AtomicLong count = new AtomicLong(0L);
         Set<Vec2i> regionPositions = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        try (MinecraftSave save = new SaveBuilder()
-                .setInitFunctions(new MinecraftSaveConfig()
-                        .openOptions(new RegionOpenOptions().access(RegionFile.Access.READ_ONLY).mode(RegionFile.Mode.MMAP_FULL))
-                        .tileEntityFactory(TileEntityRegistry.builder(TileEntityRegistry.defaultRegistry())
-                                .add(TileEntitySpawner.ID, TileEntitySpawner::new)
-                                .build()))
-                .setFormat(new AnvilSaveFormat(worldFile)).build()) {
-            World world = save.world(dim);
-            if (world == null) {
-                throw new IllegalArgumentException(String.format("Invalid dimension: %d", dim));
-            }
-
+        try (Save save = new AnvilSaveFormat().open(worldFile, SaveOptions.builder()
+                .set(SaveOptions.ACCESS, WriteAccess.READ_ONLY)
+                .set(AnvilSaveOptions.MMAP_REGIONS, true)
+                .set(SaveOptions.BYTE_ALLOC, ArrayAllocator.pow2(byte.class, ReferenceType.SOFT, 64 * PorkUtil.CPU_COUNT))
+                .set(SaveOptions.INT_ALLOC, ArrayAllocator.pow2(int.class, ReferenceType.SOFT, 64 * PorkUtil.CPU_COUNT))
+                .set(SaveOptions.LONG_ALLOC, ArrayAllocator.pow2(long.class, ReferenceType.SOFT, 64 * PorkUtil.CPU_COUNT))
+                .build())) {
             for (SearchModule module : modules) {
-                module.init(world, REGISTERED_OUTPUTS.get(formatName).apply(outDir));
+                module.init(save, REGISTERED_OUTPUTS.get(formatName).apply(outDir));
             }
 
-            WorldScanner scanner = new WorldScanner(world) {
-                @Override
-                public WorldScanner addProcessor(ChunkProcessor processor) {
-                    if (processor instanceof NeighboringChunkProcessor) {
-                        return super.addProcessor((NeighboringChunkProcessor) processor);
-                    } else {
-                        return super.addProcessor(processor);
-                    }
+            try (World world = save.world(dim)) {
+                if (world == null) {
+                    throw new IllegalArgumentException(PStrings.fastFormat("Invalid dimension: %s", dim));
                 }
-            };
-            if (verbose) {
-                scanner.addProcessor((current, estimatedTotal, column) -> {
-                    if (regionPositions.add(new Vec2i(column.getX() >> 5, column.getZ() >> 5))) {
-                        logger.debug("Processing region #%d (%d,%d), chunk %d/~%d (%.2f%%)", regionPositions.size(), column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
-                    }
-                });
+
+                /*if (verbose) {
+                    scanner.addProcessor((current, estimatedTotal, column) -> {
+                        if (regionPositions.add(new Vec2i(column.getX() >> 5, column.getZ() >> 5))) {
+                            logger.debug("Processing region #%d (%d,%d), chunk %d/~%d (%.2f%%)", regionPositions.size(), column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
+                        }
+                    });
+                }*/
+                StreamSupport.stream(world.storage().allSections(), true)
+                        .forEach(section -> modules.forEach(module -> ((SearchModule.ForSection) module).acceptChunk(world, section)));
             }
-            scanner.addProcessor((current, estimatedTotal, column) -> count.set(current));
-            modules.forEach(scanner::addProcessor);
-            scanner.run(true);
 
             logger.info("Finishing...");
             modules.forEach((IOConsumer<SearchModule>) SearchModule::close);

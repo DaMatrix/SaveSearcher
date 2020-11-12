@@ -19,21 +19,11 @@
 
 package net.daporkchop.savesearcher.util;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
-import net.daporkchop.lib.http.Http;
-import net.daporkchop.lib.logging.Logging;
-import net.daporkchop.savesearcher.Main;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static net.daporkchop.lib.logging.Logging.*;
 
 /**
  * @author DaPorkchop_
@@ -43,7 +33,8 @@ public class Version {
     public final String VERSION;
 
     static {
-        try {
+        VERSION = "unknown";
+        /*try {
             JsonParser parser = new JsonParser();
             JsonObject local;
             try (Reader reader = new InputStreamReader(Main.class.getResourceAsStream("/version.json"))) {
@@ -73,12 +64,12 @@ public class Version {
             VERSION = local.get("nameNew").getAsString().replaceAll(" ", "");
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        }*/
     }
 
-    private int toVersionNumber(@NonNull String version)   {
+    private int toVersionNumber(@NonNull String version) {
         Matcher matcher = Pattern.compile("^ *?([0-9]+)\\. *?([0-9]+)\\. *?([0-9]+)$").matcher(version);
-        if (!matcher.find())    {
+        if (!matcher.find()) {
             throw new IllegalArgumentException(version);
         }
         return Integer.parseInt(matcher.group(1)) * 1000000 + Integer.parseInt(matcher.group(2)) * 1000 + Integer.parseInt(matcher.group(3));

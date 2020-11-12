@@ -22,13 +22,15 @@ apply plugin: "java"
 ext {
     //general things
     javaVersion = "1.8"
-    savesearcherVersion = "1.6.2"
+    minecraftVersion = "1.16.4"
+    savesearcherVersion = "2.0.0." + ('git rev-list --count HEAD'.execute().text.trim()) + "-$minecraftVersion-SNAPSHOT"
 
     //dependency things
     gsonVersion = "2.8.5"
     junitVersion = "4.12"
     lombokVersion = "1.16.20"
-    porklibVersion = "0.5.4-SNAPSHOT"
+    mcworldlibVersion = "0.0.1-$minecraftVersion-SNAPSHOT"
+    porklibVersion = "0.5.5-SNAPSHOT"
 }
 
 group "net.daporkchop"
@@ -56,19 +58,16 @@ configurations {
 }
 
 dependencies {
-    shade "com.google.code.gson:gson:$gsonVersion"
-
     shade "net.daporkchop.lib:http:$porklibVersion"
     shade "net.daporkchop.lib:logging:$porklibVersion"
-    shade "net.daporkchop.lib:minecraft-worldscanner:$porklibVersion"
     shade "net.daporkchop.lib:reflection:$porklibVersion"
+
+    shade "net.daporkchop:mcworldlib:$mcworldlibVersion"
 
     testCompile "junit:junit:$junitVersion"
 
     compileOnly "org.projectlombok:lombok:$lombokVersion"
-    testCompileOnly "org.projectlombok:lombok:$lombokVersion"
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 }
 
 jar {

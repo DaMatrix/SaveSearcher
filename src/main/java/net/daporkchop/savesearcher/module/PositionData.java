@@ -19,13 +19,10 @@
 
 package net.daporkchop.savesearcher.module;
 
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import net.daporkchop.lib.math.vector.i.Vec3i;
-import net.daporkchop.lib.minecraft.tileentity.TileEntity;
+import net.daporkchop.lib.nbt.tag.CompoundTag;
 
 /**
  * Base class for module output data that has a position.
@@ -38,8 +35,8 @@ public class PositionData {
     public final int y;
     public final int z;
 
-    public PositionData(@NonNull TileEntity te) {
-        this(te.getX(), te.getY(), te.getZ());
+    public PositionData(@NonNull CompoundTag te) {
+        this(te.getInt("x"), te.getInt("y"), te.getInt("z"));
     }
 
     public PositionData(@NonNull Vec3i vec) {

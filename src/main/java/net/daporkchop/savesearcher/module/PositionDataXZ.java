@@ -22,8 +22,6 @@ package net.daporkchop.savesearcher.module;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.math.vector.i.Vec2i;
-import net.daporkchop.lib.math.vector.i.Vec3i;
-import net.daporkchop.lib.minecraft.tileentity.TileEntity;
 
 /**
  * Base class for module output data that has a position.

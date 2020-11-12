@@ -22,23 +22,17 @@ package net.daporkchop.savesearcher.output.csv;
 import lombok.NonNull;
 import net.daporkchop.lib.binary.oio.appendable.PAppendable;
 import net.daporkchop.lib.binary.oio.writer.UTF8FileWriter;
-import net.daporkchop.lib.common.misc.file.PFiles;
-import net.daporkchop.lib.common.system.OperatingSystem;
 import net.daporkchop.lib.common.system.PlatformInfo;
-import net.daporkchop.lib.unsafe.PUnsafe;
-import net.daporkchop.savesearcher.module.SearchModule;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
 import java.util.zip.GZIPOutputStream;
 
 /**
  * @author DaPorkchop_
  */
-public final class CompressedCSVOutputHandle extends CSVOutputHandle {
+public final class CompressedCSVOutputHandle<R> extends CSVOutputHandle<R> {
     public CompressedCSVOutputHandle(@NonNull File parent) {
         super(parent);
     }
