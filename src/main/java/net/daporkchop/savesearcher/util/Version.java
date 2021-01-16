@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -55,7 +55,7 @@ public class Version {
                 int remoteVersion = toVersionNumber(remote.get("nameNew").getAsString());
                 if (localVersion < remoteVersion) {
                     logger.alert(
-                            "Outdated version! You're still on %s, but the latest version is %s.\nDownload the latest version from https://github.com/DaMatrix/SaveSearcher.\n\nScanner will start in 5 seconds...",
+                            "Outdated version! You're still on %s, but the latest version is %s.\nDownload the latest version from https://jenkins.daporkchop.net/job/Minecraft/job/SaveSearcher/job/master/.\n\nScanner will start in 5 seconds...",
                             local.get("nameNew").getAsString().replaceAll(" ", ""),
                             remote.get("nameNew").getAsString().replaceAll(" ", "")
                     );

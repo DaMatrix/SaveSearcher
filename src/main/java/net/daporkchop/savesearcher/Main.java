@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -56,12 +56,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
 import static net.daporkchop.lib.logging.Logging.*;
@@ -103,10 +102,10 @@ public class Main {
         }
 
         if (args.length == 0
-                || contains(args, "-h")
-                || contains(args, "--help")
-                || contains(args, "--h")
-                || contains(args, "-help")) {
+            || contains(args, "-h")
+            || contains(args, "--help")
+            || contains(args, "--h")
+            || contains(args, "-help")) {
             logger.info("SaveSearcher v%s", Version.VERSION)
                     .info("Copyright (c) DaPorkchop_")
                     .info("https://github.com/DaMatrix/SaveSearcher")
@@ -226,8 +225,8 @@ public class Main {
         modules.forEach(m -> logger.info("  %s", m.toString()));
 
         long time = System.currentTimeMillis();
-        AtomicLong count = new AtomicLong(0L);
-        Set<Vec2i> regionPositions = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        LongAdder count = new LongAdder();
+        Set<Vec2i> regionPositions = ConcurrentHashMap.newKeySet();
         try (MinecraftSave save = new SaveBuilder()
                 .setInitFunctions(new MinecraftSaveConfig()
                         .openOptions(new RegionOpenOptions().access(RegionFile.Access.READ_ONLY).mode(RegionFile.Mode.MMAP_FULL))
@@ -259,9 +258,14 @@ public class Main {
                     if (regionPositions.add(new Vec2i(column.getX() >> 5, column.getZ() >> 5))) {
                         logger.debug("Processing region #%d (%d,%d), chunk %d/~%d (%.2f%%)", regionPositions.size(), column.getX() >> 5, column.getZ() >> 5, current, estimatedTotal, ((double) current / (double) estimatedTotal) * 100.0d);
                     }
+                    count.increment();
+                });
+            } else {
+                scanner.addProcessor((current, estimatedTotal, column) -> {
+                    regionPositions.add(new Vec2i(column.getX() >> 5, column.getZ() >> 5));
+                    count.increment();
                 });
             }
-            scanner.addProcessor((current, estimatedTotal, column) -> count.set(current));
             modules.forEach(scanner::addProcessor);
             scanner.run(true);
 
@@ -271,7 +275,7 @@ public class Main {
         time = System.currentTimeMillis() - time;
         logger.success("Done!").success(
                 "Scanned %d chunks (across %d regions) in %dh:%dm:%ds",
-                count.get() + 1,
+                count.sum(),
                 regionPositions.size(),
                 time / (1000L * 60L * 60L),
                 time / (1000L * 60L) % 60,
