@@ -42,8 +42,9 @@ import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
 import net.daporkchop.savesearcher.module.impl.EntityModule;
 import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
-import net.daporkchop.savesearcher.module.impl.SignModule;
+import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
 import net.daporkchop.savesearcher.module.impl.SpawnerModule;
+import net.daporkchop.savesearcher.module.impl.SignModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
@@ -77,6 +78,7 @@ public class Main {
             this.put("--emptychunks", EmptyChunksModule::new);
             this.put("--entity", EntityModule::new);
             this.put("--netherchunks", NetherChunksModule::new);
+            this.put("--brokenportals", BrokenPortalModule::new);
             this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
         }
@@ -127,9 +129,11 @@ public class Main {
                     .warn("                                      WARNING! Can cause significant slowdown!")
                     .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                       Scan for empty (air-only) chunks.")
+                    .info("--brokenportals                     Scan for portals that aren't supported by an obsidian frame")
                     .info("--sign                              Scan for sign blocks, saving coordinates and text.")
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.");
+
             return;
         } else {
             logger.addFile(new File("savesearcher.log").getAbsoluteFile(), true, LogAmount.DEBUG)
