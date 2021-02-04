@@ -47,27 +47,23 @@ public class BrokenPortalModule extends AbstractSearchModule<Vec3i> {
                                     int east_id = section.getBlockId(x + 1, y, z);
                                     int west_id = section.getBlockId(x - 1, y, z);
 
-                                    if (!(east_id == portal
-                                            || east_id == obsidian
-                                            || west_id == portal
-                                            || west_id == obsidian)) {
+                                    if ((east_id != portal
+                                            && east_id != obsidian)
+                                            || (west_id != portal
+                                            && west_id != obsidian)) {
                                         handle.accept(new Vec3i(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z));
                                     }
-                                    break;
                                 case 2:
                                     int south_id = section.getBlockId(x, y, z + 1);
                                     int north_id = section.getBlockId(x, y, z - 1);
 
-                                    if (!(south_id == portal
-                                            || south_id == obsidian
-                                            || north_id == portal
-                                            || north_id == obsidian)) {
+                                    if ((south_id != portal
+                                            && south_id != obsidian)
+                                            || (north_id != portal
+                                            && north_id != obsidian)) {
                                         handle.accept(new Vec3i(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z));
                                     }
-                                    break;
                             }
-
-
                             return;
                         }
                     }
