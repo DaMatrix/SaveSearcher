@@ -59,7 +59,7 @@ pipeline {
     stages {
         stage("Build") {
             steps {
-                sh "./gradlew build -x test"
+                sh "./gradlew build --refresh-dependencies -x test"
             }
             post {
                 success {
