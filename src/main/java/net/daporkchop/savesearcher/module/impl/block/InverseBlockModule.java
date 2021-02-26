@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -53,15 +53,15 @@ final class InverseBlockModule extends AbstractSearchModule<PositionData> {
         final int id = this.id;
         final int meta = this.meta;
 
-        for (int sectionY = 15; sectionY >= 0; sectionY--) {
+        for (int sectionY = 0; sectionY < 16; sectionY++) {
             Section section = chunk.section(sectionY);
             if (section == null) {
                 section = Section.EMPTY_SECTION;
             }
-            for (int x = 15; x >= 0; x--) {
-                for (int y = 15; y >= 0; y--) {
-                    for (int z = 15; z >= 0; z--) {
-                        if (section.getBlockId(x, y, z) != id && (meta == -1 || section.getBlockMeta(x, y, z) != meta)) {
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        if (section.getBlockId(x, y, z) != id && (meta < 0 || section.getBlockMeta(x, y, z) != meta)) {
                             handle.accept(new PositionData(chunk.minX() + x, (sectionY << 4) + y, chunk.minZ() + z));
                         }
                     }

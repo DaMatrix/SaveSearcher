@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -55,10 +55,10 @@ final class InverseBlockRangeModule extends AbstractSearchModule<PositionData> {
         final int maxY = this.maxY;
         final int minY = this.minY;
 
-        for (int y = maxY; y >= minY; y--) {
-            for (int x = 15; x >= 0; x--) {
-                for (int z = 15; z >= 0; z--) {
-                    if (chunk.getBlockId(x, y, z) != id && (meta == -1 || chunk.getBlockMeta(x, y, z) != meta)) {
+        for (int y = minY; y <= maxY; y++) {
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    if (chunk.getBlockId(x, y, z) != id && (meta < 0 || chunk.getBlockMeta(x, y, z) != meta)) {
                         handle.accept(new PositionData(chunk.minX() + x, y, chunk.minZ() + z));
                     }
                 }

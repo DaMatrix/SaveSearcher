@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -67,7 +67,7 @@ public final class DoubleChestModule extends AbstractSearchModule<DoubleChestMod
         final int z = chunk.getZ() << 4;
 
         for (int xx = 15; xx >= 0; xx--) {
-            for (int zz = (xx & 1) == 0 ? 15 : 14; zz >= 0; zz -= 2) {
+            for (int zz = 15 - (xx & 1); zz >= 0; zz -= 2) {
                 for (int y = 255; y >= 0; y--) {
                     int id = access.getBlockId(x + xx, y, z + zz);
                     if (id == chestId)  {
