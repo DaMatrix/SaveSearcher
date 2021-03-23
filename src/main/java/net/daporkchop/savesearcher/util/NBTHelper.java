@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -56,6 +56,7 @@ public class NBTHelper {
             builder.setLength(0);
 
             try (JsonWriter writer = new JsonWriter(Streams.writerForAppendable(builder))) {
+                writer.setLenient(true);
                 Streams.write(toJson0(nbt), writer);
             } catch (IOException e) {
                 throw new AssertionError(e); //impossible
