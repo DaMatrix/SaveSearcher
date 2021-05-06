@@ -38,6 +38,7 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
 import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
 import net.daporkchop.savesearcher.module.impl.EntityModule;
@@ -50,6 +51,7 @@ import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
+import net.daporkchop.savesearcher.tileentity.TileEntityCommandBlock;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 import net.daporkchop.savesearcher.util.Version;
 
@@ -81,6 +83,7 @@ public class Main {
             this.put("--brokenportals", BrokenPortalModule::new);
             this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
+            this.put("--command_block", CommandBlockModule::new);
         }
     };
 
@@ -129,10 +132,11 @@ public class Main {
                     .warn("                                      WARNING! Can cause significant slowdown!")
                     .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                       Scan for empty (air-only) chunks.")
-                    .info("--brokenportals                     Scan for portals that aren't supported by an obsidian frame")
+                    .info("--brokenportals                     Scan for portals that aren't supported by an obsidian frame.")
                     .info("--sign                              Scan for sign blocks, saving coordinates and text.")
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
-                    .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.");
+                    .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
+                    .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.");
 
             return;
         } else {
@@ -235,6 +239,7 @@ public class Main {
                 .setInitFunctions(new MinecraftSaveConfig()
                         .openOptions(new RegionOpenOptions().access(RegionFile.Access.READ_ONLY).mode(RegionFile.Mode.MMAP_FULL))
                         .tileEntityFactory(TileEntityRegistry.builder(TileEntityRegistry.defaultRegistry())
+                                .add(TileEntityCommandBlock.ID, TileEntityCommandBlock::new)
                                 .add(TileEntitySpawner.ID, TileEntitySpawner::new)
                                 .build()))
                 .setFormat(new AnvilSaveFormat(worldFile)).build()) {
