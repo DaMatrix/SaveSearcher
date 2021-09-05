@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -21,8 +21,11 @@ package net.daporkchop.savesearcher.module.impl;
 
 import com.google.gson.JsonObject;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.logging.format.FormatParser;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
+import net.daporkchop.lib.minecraft.text.MCTextEncoder;
+import net.daporkchop.lib.minecraft.text.MCTextType;
 import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.tileentity.impl.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Chunk;
@@ -31,16 +34,49 @@ import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
+import java.util.Objects;
+
 /**
  * @author DaPorkchop_
  */
 public final class SignModule extends AbstractSearchModule<SignModule.SignData> {
     private static final FormatParser PARSER = new MinecraftFormatParser();
 
+    private final Mode mode;
+
     private int standing_sign;
     private int wall_sign;
 
     public SignModule(String[] args) {
+        Mode mode = Mode.PLAIN_TEXT;
+
+        for (String s : args) {
+            String[] split = s.split("=");
+            if (split.length != 2) {
+                throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
+            }
+            switch (split[0]) {
+                case "mode":
+                    switch (split[1]) {
+                        case "plain_text":
+                            mode = Mode.PLAIN_TEXT;
+                            break;
+                        case "formatted_legacy":
+                            mode = Mode.FORMATTED_LEGACY;
+                            break;
+                        case "raw":
+                            mode = Mode.RAW;
+                            break;
+                        default:
+                            throw new IllegalArgumentException(String.format("Invalid mode: %s", s));
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
+            }
+        }
+
+        this.mode = mode;
     }
 
     @Override
@@ -55,23 +91,56 @@ public final class SignModule extends AbstractSearchModule<SignModule.SignData> 
     protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
         chunk.tileEntities().stream()
                 .filter(TileEntitySign.class::isInstance)
-                .map(te -> new SignData((TileEntitySign) te, chunk))
+                .map(te -> new SignData((TileEntitySign) te, chunk, this.mode))
                 .forEach(handle::accept);
     }
 
     @Override
     public String toString() {
-        return "Signs";
+        return String.format("Signs (mode=%s)", this.mode.name);
     }
 
     @Override
     public int hashCode() {
-        return SignModule.class.hashCode();
+        return SignModule.class.hashCode() ^ this.mode.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof SignModule;
+        if (obj == this) {
+            return true;
+        } else if (obj instanceof SignModule) {
+            return this.mode == ((SignModule) obj).mode;
+        } else {
+            return false;
+        }
+    }
+
+    @RequiredArgsConstructor
+    protected enum Mode {
+        PLAIN_TEXT("Plain Text") {
+            @Override
+            public String parse(@NonNull String text) {
+                return PARSER.parse(text).toRawString();
+            }
+        },
+        FORMATTED_LEGACY("Legacy Formatting") {
+            @Override
+            public String parse(@NonNull String text) {
+                return MCTextEncoder.encode(MCTextType.LEGACY, PARSER.parse(text));
+            }
+        },
+        RAW("Raw") {
+            @Override
+            public String parse(@NonNull String text) {
+                return text;
+            }
+        };
+
+        @NonNull
+        protected final String name;
+
+        public abstract String parse(@NonNull String text);
     }
 
     protected final class SignData extends PositionData {
@@ -83,13 +152,13 @@ public final class SignModule extends AbstractSearchModule<SignModule.SignData> 
         public final String type;
         public final String direction;
 
-        public SignData(@NonNull TileEntitySign te, @NonNull Chunk chunk) {
+        public SignData(@NonNull TileEntitySign te, @NonNull Chunk chunk, @NonNull Mode mode) {
             super(te);
 
-            this.line1 = PARSER.parse(te.line1()).toRawString();
-            this.line2 = PARSER.parse(te.line2()).toRawString();
-            this.line3 = PARSER.parse(te.line3()).toRawString();
-            this.line4 = PARSER.parse(te.line4()).toRawString();
+            this.line1 = mode.parse(te.line1());
+            this.line2 = mode.parse(te.line2());
+            this.line3 = mode.parse(te.line3());
+            this.line4 = mode.parse(te.line4());
 
             int id = chunk.getBlockId(te.getX() & 0xF, te.getY(), te.getZ() & 0xF);
             int meta = chunk.getBlockMeta(te.getX() & 0xF, te.getY(), te.getZ() & 0xF);

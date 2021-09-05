@@ -58,6 +58,7 @@ import net.daporkchop.savesearcher.util.Version;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,7 +134,7 @@ public class Main {
                     .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                       Scan for empty (air-only) chunks.")
                     .info("--brokenportals                     Scan for portals that aren't supported by an obsidian frame.")
-                    .info("--sign                              Scan for sign blocks, saving coordinates and text.")
+                    .info("--sign(,mode=<mode>)                Scan for sign blocks, saving coordinates and text. Valid modes: plain_text (default), formatted_legacy, raw.")
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
                     .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.");
@@ -194,7 +195,7 @@ public class Main {
                 logger.error("Invalid module: %s", split[0]);
                 System.exit(1);
             }
-            SearchModule module = function.apply(s.replaceAll(split[0], "").replaceAll(split[0] + ",", "").split(","));
+            SearchModule module = function.apply(Arrays.copyOfRange(split, 1, split.length));
             if (modules.contains(module)) {
                 logger.warn("Duplicate argument: \"%s\"!", s);
             } else {

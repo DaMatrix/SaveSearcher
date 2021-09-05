@@ -45,9 +45,6 @@ public final class BlockModule extends AbstractSearchModule<Vec3i> {
         boolean chunkinvert = false;
 
         for (String s : args) {
-            if (s.isEmpty()) {
-                continue;
-            }
             String[] split = s.split("=");
             if (split.length != 2) {
                 throw new IllegalArgumentException(String.format("Invalid argument: %s", s));

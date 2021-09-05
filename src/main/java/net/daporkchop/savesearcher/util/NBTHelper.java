@@ -52,7 +52,7 @@ import java.io.IOException;
 public class NBTHelper {
     public String toJson(@NonNull Tag nbt) {
         try (Handle<StringBuilder> handle = PorkUtil.STRINGBUILDER_POOL.get()) {
-            StringBuilder builder = handle.value();
+            StringBuilder builder = handle.get();
             builder.setLength(0);
 
             try (JsonWriter writer = new JsonWriter(Streams.writerForAppendable(builder))) {
