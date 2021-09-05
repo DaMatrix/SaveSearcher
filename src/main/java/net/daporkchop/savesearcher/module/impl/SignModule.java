@@ -85,16 +85,16 @@ public final class SignModule extends AbstractTileEntityByClassSearchModule<Sign
     }
 
     @Override
-    protected void handleTileEntity(@NonNull Chunk chunk, @NonNull TileEntitySign tileEntity, @NonNull OutputHandle handle) {
-        handle.accept(new SignData(chunk, tileEntity, this.mode));
+    protected void processTileEntity(@NonNull Chunk chunk, @NonNull TileEntitySign tileEntity) {
+        this.handle.accept(new SignData(chunk, tileEntity, this.mode));
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         chunk.tileEntities().stream()
                 .filter(TileEntitySign.class::isInstance)
                 .map(te -> new SignData(chunk, (TileEntitySign) te, this.mode))
-                .forEach(handle::accept);
+                .forEach(this.handle::accept);
     }
 
     @Override

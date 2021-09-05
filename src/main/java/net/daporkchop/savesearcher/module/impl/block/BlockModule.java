@@ -19,23 +19,40 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
+import io.netty.util.collection.IntObjectHashMap;
+import io.netty.util.collection.IntObjectMap;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.common.util.PArrays;
 import net.daporkchop.lib.math.vector.i.Vec3i;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.lib.primitive.lambda.consumer.IntIntIntConsumer;
 import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.merging.AbstractChunkSectionSearchModule;
+import net.daporkchop.savesearcher.module.merging.AbstractEntityByIdSearchModule;
+import net.daporkchop.savesearcher.module.merging.AbstractMergedSearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static net.daporkchop.lib.common.util.PorkUtil.*;
 
 /**
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class BlockModule extends AbstractSearchModule<Vec3i> {
+@EqualsAndHashCode
+public final class BlockModule extends AbstractChunkSectionSearchModule<Vec3i> implements IntIntIntConsumer {
     public static SearchModule find(@NonNull String[] args) {
         ResourceLocation id = null;
         int meta = -1;
@@ -101,6 +118,8 @@ public final class BlockModule extends AbstractSearchModule<Vec3i> {
 
     protected final ResourceLocation searchName;
     protected final int meta;
+
+    @EqualsAndHashCode.Exclude
     protected int id;
 
     @Override
@@ -108,30 +127,29 @@ public final class BlockModule extends AbstractSearchModule<Vec3i> {
         super.init(world, handle);
 
         if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
-            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName));
         }
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunkSection(@NonNull Chunk chunk, @NonNull Section section) {
         final int id = this.id;
         final int meta = this.meta;
 
-        for (int sectionY = 0; sectionY < 16; sectionY++) {
-            Section section = chunk.section(sectionY);
-            if (section == null) {
-                continue;
-            }
-            for (int y = 0; y < 16; y++) {
-                for (int z = 0; z < 16; z++) {
-                    for (int x = 0; x < 16; x++) {
-                        if (section.getBlockId(x, y, z) == id && (meta < 0 || section.getBlockMeta(x, y, z) == meta)) {
-                            handle.accept(new Vec3i(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z));
-                        }
+        for (int y = 0; y < 16; y++) {
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    if (section.getBlockId(x, y, z) == id && (meta < 0 || section.getBlockMeta(x, y, z) == meta)) {
+                        this.accept(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z);
                     }
                 }
             }
         }
+    }
+
+    @Override
+    public void accept(int x, int y, int z) {
+        this.handle.accept(new Vec3i(x, y, z));
     }
 
     @Override
@@ -144,21 +162,68 @@ public final class BlockModule extends AbstractSearchModule<Vec3i> {
     }
 
     @Override
-    public int hashCode() {
-        //id is only computed later and can change dynamically, so we don't want to include it in the hash code
-        return this.searchName.hashCode() * 31 + this.meta;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj.getClass() == BlockModule.class) {
-            //don't do instanceof check, since we only want to check if the modules are exactly identical
-            BlockModule other = (BlockModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta;
-        } else {
-            return false;
+    protected void mergeChunkSection(@NonNull List<AbstractChunkSectionSearchModule<?>> in, @NonNull Consumer<AbstractChunkSectionSearchModule<?>> addMerged) {
+        if (in.stream().filter(BlockModule.class::isInstance).count() <= 2L) { //if there are less than 2 modules, the overhead of merging likely outweighs any potential benefits
+            return;
         }
+
+        List<BlockModule> modules = new ArrayList<>();
+        for (Iterator<AbstractChunkSectionSearchModule<?>> itr = in.iterator(); itr.hasNext(); ) {
+            AbstractChunkSectionSearchModule<?> module = itr.next();
+            if (module instanceof BlockModule) {
+                modules.add((BlockModule) module);
+                itr.remove();
+            }
+        }
+
+        IntObjectMap<List<IntIntIntConsumer>[]> initialIndex = new IntObjectHashMap<>();
+        modules.forEach(module -> {
+            List<IntIntIntConsumer>[] allMetas = initialIndex.computeIfAbsent(module.id, id -> uncheckedCast(PArrays.filled(16, List[]::new, (Supplier<List>) ArrayList::new)));
+            if (module.meta < 0) {
+                for (List<IntIntIntConsumer> list : allMetas) {
+                    list.add(module);
+                }
+            } else {
+                allMetas[module.meta].add(module);
+            }
+        });
+
+        IntObjectMap<IntIntIntConsumer[]> compactIndex = new IntObjectHashMap<>();
+        initialIndex.forEach((id, allMetas) -> compactIndex.put(id, Stream.of(allMetas)
+                .map(list -> {
+                    switch (list.size()) {
+                        case 0:
+                            return null;
+                        case 1:
+                            return list.get(0);
+                        default:
+                            IntIntIntConsumer[] callbacks = list.toArray(new IntIntIntConsumer[0]);
+                            return (IntIntIntConsumer) (x, y, z) -> {
+                                for (IntIntIntConsumer callback : callbacks) {
+                                    callback.accept(x, y, z);
+                                }
+                            };
+                    }
+                })
+                .toArray(IntIntIntConsumer[]::new)));
+
+        addMerged.accept(new AbstractChunkSectionSearchModule.Merged(modules) {
+            @Override
+            protected void processChunkSection(@NonNull Chunk chunk, @NonNull Section section) {
+                for (int y = 0; y < 16; y++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int x = 0; x < 16; x++) {
+                            IntIntIntConsumer[] allMetas = compactIndex.get(section.getBlockId(x, y, z));
+                            if (allMetas != null) {
+                                IntIntIntConsumer callback = allMetas[section.getBlockMeta(x, y, z)];
+                                if (callback != null) {
+                                    callback.accept(chunk.minX() + x, (section.getY() << 4) + y, chunk.minZ() + z);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 }

@@ -19,6 +19,7 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
@@ -33,22 +34,25 @@ import net.daporkchop.savesearcher.output.OutputHandle;
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 final class ChunkInverseBlockModule extends AbstractSearchModule<PositionDataXZ> {
     protected final ResourceLocation searchName;
-    protected final int              meta;
-    protected       int              id;
+    protected final int meta;
+
+    @EqualsAndHashCode.Exclude
+    protected int id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
         super.init(world, handle);
 
         if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
-            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName));
         }
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         final int id = this.id;
         final int meta = this.meta;
 
@@ -71,7 +75,7 @@ final class ChunkInverseBlockModule extends AbstractSearchModule<PositionDataXZ>
                 }
             }
         }
-        handle.accept(new PositionDataXZ(chunk.pos()));
+        this.handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
@@ -80,24 +84,6 @@ final class ChunkInverseBlockModule extends AbstractSearchModule<PositionDataXZ>
             return String.format("Block - Inverted (chunk, id=%s)", this.searchName);
         } else {
             return String.format("Block - Inverted (chunk, id=%s, meta=%d)", this.searchName, this.meta);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        //id is only computed later and can change dynamically, so we don't want to include it in the hash code
-        return this.searchName.hashCode() * 31 + this.meta;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj.getClass() == ChunkInverseBlockModule.class) {
-            ChunkInverseBlockModule other = (ChunkInverseBlockModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta;
-        } else {
-            return false;
         }
     }
 }

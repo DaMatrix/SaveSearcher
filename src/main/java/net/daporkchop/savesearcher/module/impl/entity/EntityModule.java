@@ -27,10 +27,7 @@ import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.util.NBTHelper;
-
-import java.util.Objects;
 
 /**
  * @author DaPorkchop_
@@ -48,8 +45,8 @@ public final class EntityModule extends AbstractSearchModule<EntityModule.Entity
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
-        chunk.entities().forEach(entity -> handle.accept(new EntityData(entity)));
+    protected void processChunk(@NonNull Chunk chunk) {
+        chunk.entities().forEach(entity -> this.handle.accept(new EntityData(entity)));
     }
 
     @Override

@@ -19,6 +19,7 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
@@ -32,24 +33,27 @@ import net.daporkchop.savesearcher.output.OutputHandle;
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 final class ChunkInverseBlockRangeModule extends AbstractSearchModule<PositionDataXZ> {
     protected final ResourceLocation searchName;
-    protected final int              meta;
-    protected final int              minY;
-    protected final int              maxY;
-    protected       int              id;
+    protected final int meta;
+    protected final int minY;
+    protected final int maxY;
+
+    @EqualsAndHashCode.Exclude
+    protected int id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
         super.init(world, handle);
 
         if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
-            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName));
         }
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         final int id = this.id;
         final int meta = this.meta;
         final int maxY = this.maxY;
@@ -65,7 +69,7 @@ final class ChunkInverseBlockRangeModule extends AbstractSearchModule<PositionDa
             }
         }
 
-        handle.accept(new PositionDataXZ(chunk.pos()));
+        this.handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
@@ -74,23 +78,6 @@ final class ChunkInverseBlockRangeModule extends AbstractSearchModule<PositionDa
             return String.format("Block - Inverted,Ranged (chunk, id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
         } else {
             return String.format("Block - Inverted,Ranged (chunk, id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return ((this.searchName.hashCode() * 31 + this.meta) * 31 + this.maxY) * 31 + this.minY;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj.getClass() == ChunkInverseBlockRangeModule.class) {
-            ChunkInverseBlockRangeModule other = (ChunkInverseBlockRangeModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
-        } else {
-            return false;
         }
     }
 }

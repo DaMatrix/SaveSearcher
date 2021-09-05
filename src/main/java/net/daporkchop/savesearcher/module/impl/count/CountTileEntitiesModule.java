@@ -25,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
@@ -35,14 +34,14 @@ public final class CountTileEntitiesModule extends AbstractSearchModule<CountBlo
     protected final ResourceLocation filterId;
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         long count;
         if (this.filterId == null) {
             count = chunk.tileEntities().size();
         } else {
             count = chunk.tileEntities().stream().filter(tileEntity -> this.filterId.equals(tileEntity.id())).count();
         }
-        handle.accept(new CountBlocksModule.CountData(chunk.pos(), count));
+        this.handle.accept(new CountBlocksModule.CountData(chunk.pos(), count));
     }
 
     @Override

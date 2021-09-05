@@ -26,7 +26,6 @@ import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,15 +46,15 @@ public abstract class AbstractEntityByIdSearchModule<S> extends AbstractSearchMo
     private final Set<ResourceLocation> entityIds;
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         chunk.entities().forEach(entity -> {
             if (this.entityIds.contains(entity.id())) {
-                this.handleEntity(entity, handle);
+                this.processEntity(entity);
             }
         });
     }
 
-    protected abstract void handleEntity(@NonNull Entity entity, @NonNull OutputHandle handle);
+    protected abstract void processEntity(@NonNull Entity entity);
 
     @Override
     public void merge(@NonNull List<SearchModule> in, @NonNull Consumer<SearchModule> addMerged) {
@@ -82,7 +81,7 @@ public abstract class AbstractEntityByIdSearchModule<S> extends AbstractSearchMo
                 chunk.entities().forEach(entity -> {
                     List<AbstractEntityByIdSearchModule<?>> modules = modulesById.get(entity.id());
                     if (modules != null) {
-                        modules.forEach(module -> module.handleEntity(entity, module.handle()));
+                        modules.forEach(module -> module.processEntity(entity));
                     }
                 });
             }

@@ -22,12 +22,12 @@ apply plugin: "java"
 ext {
     //general things
     javaVersion = "1.8"
-    savesearcherVersion = "1.6.10"
+    savesearcherVersion = "1.6.11"
 
     //dependency things
     gsonVersion = "2.8.5"
     junitVersion = "4.12"
-    lombokVersion = "1.16.20"
+    lombokVersion = "1.18.20"
     porklibVersion = "0.5.4-SNAPSHOT"
 }
 

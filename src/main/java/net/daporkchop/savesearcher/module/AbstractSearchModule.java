@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -51,8 +51,8 @@ public abstract class AbstractSearchModule<S> implements SearchModule {
 
     @Override
     public void handle(long current, long estimatedTotal, @NonNull Chunk chunk) {
-        this.processChunk(chunk, this.handle);
+        this.processChunk(chunk);
     }
 
-    protected abstract void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle);
+    protected abstract void processChunk(@NonNull Chunk chunk);
 }

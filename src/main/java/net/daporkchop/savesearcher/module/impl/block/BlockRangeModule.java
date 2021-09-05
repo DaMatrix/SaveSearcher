@@ -19,6 +19,7 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.math.vector.i.Vec3i;
@@ -32,24 +33,27 @@ import net.daporkchop.savesearcher.output.OutputHandle;
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
     protected final ResourceLocation searchName;
-    protected final int              meta;
-    protected final int              minY;
-    protected final int              maxY;
-    protected       int              id;
+    protected final int meta;
+    protected final int minY;
+    protected final int maxY;
+
+    @EqualsAndHashCode.Exclude
+    protected int id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
         super.init(world, handle);
 
         if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
-            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName));
         }
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         final int id = this.id;
         final int meta = this.meta;
         final int maxY = this.maxY;
@@ -59,7 +63,7 @@ final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
             for (int z = 0; z < 16; z++) {
                 for (int x = 0; x < 16; x++) {
                     if (chunk.getBlockId(x, y, z) == id && (meta < 0 || chunk.getBlockMeta(x, y, z) == meta)) {
-                        handle.accept(new Vec3i(chunk.minX() + x, y, chunk.minZ() + z));
+                        this.handle.accept(new Vec3i(chunk.minX() + x, y, chunk.minZ() + z));
                     }
                 }
             }
@@ -72,23 +76,6 @@ final class BlockRangeModule extends AbstractSearchModule<Vec3i> {
             return String.format("Block - Ranged (id=%s, min=%d, max=%d)", this.searchName, this.minY, this.maxY);
         } else {
             return String.format("Block - Ranged (id=%s, meta=%d, min=%d, max=%d)", this.searchName, this.meta, this.minY, this.maxY);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return ((this.searchName.hashCode() * 31 + this.meta) * 31 + this.maxY) * 31 + this.minY;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj.getClass() == BlockRangeModule.class) {
-            BlockRangeModule other = (BlockRangeModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta && this.maxY == other.maxY && this.minY == other.minY;
-        } else {
-            return false;
         }
     }
 }

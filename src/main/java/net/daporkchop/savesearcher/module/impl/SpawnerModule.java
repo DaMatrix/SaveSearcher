@@ -19,19 +19,18 @@
 
 package net.daporkchop.savesearcher.module.impl;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.module.merging.AbstractTileEntityByClassSearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
-
-import java.util.Objects;
 
 /**
  * @author DaPorkchop_
  */
+@EqualsAndHashCode(callSuper = false)
 public final class SpawnerModule extends AbstractTileEntityByClassSearchModule<SpawnerModule.SpawnerData, TileEntitySpawner> {
     protected final ResourceLocation filterId;
 
@@ -49,31 +48,15 @@ public final class SpawnerModule extends AbstractTileEntityByClassSearchModule<S
     }
 
     @Override
-    protected void handleTileEntity(@NonNull Chunk chunk, @NonNull TileEntitySpawner tileEntity, @NonNull OutputHandle handle) {
+    protected void processTileEntity(@NonNull Chunk chunk, @NonNull TileEntitySpawner tileEntity) {
         if (this.filterId == null || tileEntity.canSpawn(this.filterId)) {
-            handle.accept(new SpawnerData(tileEntity));
+            this.handle.accept(new SpawnerData(tileEntity));
         }
     }
 
     @Override
     public String toString() {
         return this.filterId == null ? "Spawners" : String.format("Spawners (id=%s)", this.filterId);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.filterId == null ? SpawnerModule.class.hashCode() : this.filterId.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj instanceof SpawnerModule) {
-            return Objects.equals(this.filterId, ((SpawnerModule) obj).filterId);
-        } else {
-            return false;
-        }
     }
 
     protected static final class SpawnerData extends PositionData {

@@ -25,7 +25,6 @@ import net.daporkchop.lib.common.ref.ThreadRef;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.PositionData;
 import net.daporkchop.savesearcher.module.merging.AbstractTileEntityByClassSearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntityCommandBlock;
 
 import java.util.regex.Matcher;
@@ -50,9 +49,9 @@ public final class CommandBlockModule extends AbstractTileEntityByClassSearchMod
     }
 
     @Override
-    protected void handleTileEntity(@NonNull Chunk chunk, @NonNull TileEntityCommandBlock tileEntity, @NonNull OutputHandle handle) {
+    protected void processTileEntity(@NonNull Chunk chunk, @NonNull TileEntityCommandBlock tileEntity) {
         if (this.matcherCache == null || this.matcherCache.get().reset(tileEntity.command()).find()) {
-            handle.accept(new CommandBlockData(tileEntity));
+            this.handle.accept(new CommandBlockData(tileEntity));
         }
     }
 

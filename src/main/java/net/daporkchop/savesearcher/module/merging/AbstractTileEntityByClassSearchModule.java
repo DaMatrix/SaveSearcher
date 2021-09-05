@@ -25,7 +25,6 @@ import net.daporkchop.lib.minecraft.tileentity.TileEntity;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -43,15 +42,15 @@ public abstract class AbstractTileEntityByClassSearchModule<S, T extends TileEnt
     protected final Class<T> tileEntityClass = GenericMatcher.uncheckedFind(this.getClass(), AbstractTileEntityByClassSearchModule.class, "T");
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         chunk.tileEntities().forEach(tileEntity -> {
             if (this.tileEntityClass == tileEntity.getClass()) {
-                this.handleTileEntity(chunk, uncheckedCast(tileEntity), handle);
+                this.processTileEntity(chunk, uncheckedCast(tileEntity));
             }
         });
     }
 
-    protected abstract void handleTileEntity(@NonNull Chunk chunk, @NonNull T tileEntity, @NonNull OutputHandle handle);
+    protected abstract void processTileEntity(@NonNull Chunk chunk, @NonNull T tileEntity);
 
     @Override
     public void merge(@NonNull List<SearchModule> in, @NonNull Consumer<SearchModule> addMerged) {
@@ -78,7 +77,7 @@ public abstract class AbstractTileEntityByClassSearchModule<S, T extends TileEnt
                 chunk.tileEntities().forEach(tileEntity -> {
                     List<AbstractTileEntityByClassSearchModule<?, ?>> modules = modulesByClass.get(tileEntity.getClass());
                     if (modules != null) {
-                        modules.forEach(module -> module.handleTileEntity(chunk, uncheckedCast(tileEntity), module.handle()));
+                        modules.forEach(module -> module.processTileEntity(chunk, uncheckedCast(tileEntity)));
                     }
                 });
             }

@@ -45,7 +45,7 @@ public final class NetherChunksModule extends AbstractSearchModule<PositionDataX
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         final int id = this.bedrock_id;
 
         final Section section = chunk.section(7);
@@ -55,7 +55,7 @@ public final class NetherChunksModule extends AbstractSearchModule<PositionDataX
         for (int z = 0; z < 16; z++) {
             for (int x = 0; x < 16; x++) {
                 if (section.getBlockId(x, 15, z) == id) {
-                    handle.accept(new PositionDataXZ(chunk.pos()));
+                    this.handle.accept(new PositionDataXZ(chunk.pos()));
                     return;
                 }
             }

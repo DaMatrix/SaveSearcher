@@ -19,7 +19,6 @@
 
 package net.daporkchop.savesearcher.module.impl;
 
-import com.google.gson.JsonObject;
 import lombok.NonNull;
 import net.daporkchop.lib.minecraft.region.util.NeighboringChunkProcessor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
@@ -28,7 +27,6 @@ import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
-import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
@@ -55,7 +53,7 @@ public final class DoubleChestModule extends AbstractSearchModule<DoubleChestMod
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         throw new UnsupportedOperationException();
     }
 

@@ -99,7 +99,7 @@ public final class CountBlocksModule extends AbstractSearchModule<CountBlocksMod
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         final int id = this.id;
         final int meta = this.meta;
 
@@ -122,7 +122,7 @@ public final class CountBlocksModule extends AbstractSearchModule<CountBlocksMod
                 }
             }
         }
-        handle.accept(new CountData(chunk.pos(), count));
+        this.handle.accept(new CountData(chunk.pos(), count));
     }
 
     @Override

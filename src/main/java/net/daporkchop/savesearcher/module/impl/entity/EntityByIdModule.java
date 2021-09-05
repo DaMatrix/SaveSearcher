@@ -26,7 +26,6 @@ import net.daporkchop.lib.minecraft.entity.Entity;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.merging.AbstractEntityByIdSearchModule;
-import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
@@ -42,17 +41,17 @@ final class EntityByIdModule extends AbstractEntityByIdSearchModule<EntityModule
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         chunk.entities().forEach(entity -> {
             if (this.filterId.equals(entity.id())) {
-                handle.accept(new EntityModule.EntityData(entity));
+                this.handle.accept(new EntityModule.EntityData(entity));
             }
         });
     }
 
     @Override
-    protected void handleEntity(@NonNull Entity entity, @NonNull OutputHandle handle) {
-        handle.accept(new EntityModule.EntityData(entity));
+    protected void processEntity(@NonNull Entity entity) {
+        this.handle.accept(new EntityModule.EntityData(entity));
     }
 
     @Override

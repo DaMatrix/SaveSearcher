@@ -19,6 +19,7 @@
 
 package net.daporkchop.savesearcher.module.impl.block;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
@@ -27,29 +28,31 @@ import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
-import net.daporkchop.savesearcher.module.PositionDataXZ;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
 @RequiredArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 final class InverseBlockModule extends AbstractSearchModule<PositionData> {
     protected final ResourceLocation searchName;
-    protected final int              meta;
-    protected       int              id;
+    protected final int meta;
+
+    @EqualsAndHashCode.Exclude
+    protected int id;
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
         super.init(world, handle);
 
         if ((this.id = world.getSave().registry(new ResourceLocation("minecraft:blocks")).lookup(this.searchName)) == -1) {
-            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName.toString()));
+            throw new IllegalArgumentException(String.format("Invalid block id: %s", this.searchName));
         }
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         final int id = this.id;
         final int meta = this.meta;
 
@@ -62,7 +65,7 @@ final class InverseBlockModule extends AbstractSearchModule<PositionData> {
                 for (int z = 0; z < 16; z++) {
                     for (int x = 0; x < 16; x++) {
                         if (section.getBlockId(x, y, z) != id && (meta < 0 || section.getBlockMeta(x, y, z) != meta)) {
-                            handle.accept(new PositionData(chunk.minX() + x, (sectionY << 4) + y, chunk.minZ() + z));
+                            this.handle.accept(new PositionData(chunk.minX() + x, (sectionY << 4) + y, chunk.minZ() + z));
                         }
                     }
                 }
@@ -76,24 +79,6 @@ final class InverseBlockModule extends AbstractSearchModule<PositionData> {
             return String.format("Block - Inverted (id=%s)", this.searchName);
         } else {
             return String.format("Block - Inverted (id=%s, meta=%d)", this.searchName, this.meta);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        //id is only computed later and can change dynamically, so we don't want to include it in the hash code
-        return this.searchName.hashCode() * 31 + this.meta;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj.getClass() == InverseBlockModule.class) {
-            InverseBlockModule other = (InverseBlockModule) obj;
-            return this.searchName.equals(other.searchName) && this.meta == other.meta;
-        } else {
-            return false;
         }
     }
 }

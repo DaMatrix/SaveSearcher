@@ -24,7 +24,6 @@ import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.Section;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionDataXZ;
-import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
@@ -34,7 +33,7 @@ public final class EmptyChunksModule extends AbstractSearchModule<PositionDataXZ
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
+    protected void processChunk(@NonNull Chunk chunk) {
         for (int chunkY = 0; chunkY < 15; chunkY++) { //go from bottom section to top as it's more likely to find blocks on the bottom
             final Section section = chunk.section(chunkY);
             if (section == null) {
@@ -50,7 +49,7 @@ public final class EmptyChunksModule extends AbstractSearchModule<PositionDataXZ
                 }
             }
         }
-        handle.accept(new PositionDataXZ(chunk.pos()));
+        this.handle.accept(new PositionDataXZ(chunk.pos()));
     }
 
     @Override
