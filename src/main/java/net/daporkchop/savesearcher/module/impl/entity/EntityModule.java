@@ -17,7 +17,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.daporkchop.savesearcher.module.impl;
+package net.daporkchop.savesearcher.module.impl.entity;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +26,7 @@ import net.daporkchop.lib.minecraft.entity.impl.UnknownEntity;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.util.NBTHelper;
 
@@ -35,16 +36,12 @@ import java.util.Objects;
  * @author DaPorkchop_
  */
 public final class EntityModule extends AbstractSearchModule<EntityModule.EntityData> {
-    protected final ResourceLocation filterId;
-
-    public EntityModule(String[] args) {
+    public static SearchModule find(@NonNull String[] args) {
         switch (args.length) {
             case 0:
-                this.filterId = null;
-                break;
+                return new EntityModule();
             case 1:
-                this.filterId = new ResourceLocation(args[0]);
-                break;
+                return new EntityByIdModule(new ResourceLocation(args[0]));
             default:
                 throw new IllegalArgumentException("--entity must be called with either no arguments or the entity ID to search for!");
         }
@@ -52,37 +49,22 @@ public final class EntityModule extends AbstractSearchModule<EntityModule.Entity
 
     @Override
     protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
-        if (this.filterId == null) {
-            chunk.entities().stream()
-                    .map(EntityData::new)
-                    .forEach(handle::accept);
-        } else {
-            chunk.entities().stream()
-                    .filter(e -> this.filterId.equals(e.id()))
-                    .map(EntityData::new)
-                    .forEach(handle::accept);
-        }
+        chunk.entities().forEach(entity -> handle.accept(new EntityData(entity)));
     }
 
     @Override
     public String toString() {
-        return this.filterId == null ? "Entities" : String.format("Entities (id=%s)", this.filterId);
+        return "Entities";
     }
 
     @Override
     public int hashCode() {
-        return this.filterId == null ? EntityModule.class.hashCode() : this.filterId.hashCode();
+        return EntityModule.class.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj instanceof EntityModule) {
-            return Objects.equals(this.filterId, ((EntityModule) obj).filterId);
-        } else {
-            return false;
-        }
+        return obj instanceof EntityModule;
     }
 
     @RequiredArgsConstructor

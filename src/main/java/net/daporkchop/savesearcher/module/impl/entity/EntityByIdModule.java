@@ -17,61 +17,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.daporkchop.savesearcher.module.impl.count;
+package net.daporkchop.savesearcher.module.impl.entity;
 
-import lombok.AccessLevel;
+import com.google.common.collect.ImmutableSet;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.minecraft.entity.Entity;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.savesearcher.module.AbstractSearchModule;
+import net.daporkchop.savesearcher.module.merging.AbstractEntityByIdSearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 /**
  * @author DaPorkchop_
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class CountTileEntitiesModule extends AbstractSearchModule<CountBlocksModule.CountData> {
+@EqualsAndHashCode(callSuper = false)
+final class EntityByIdModule extends AbstractEntityByIdSearchModule<EntityModule.EntityData> {
     protected final ResourceLocation filterId;
+
+    public EntityByIdModule(@NonNull ResourceLocation filterId) {
+        super(ImmutableSet.of(filterId));
+
+        this.filterId = filterId;
+    }
 
     @Override
     protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
-        long count;
-        if (this.filterId == null) {
-            count = chunk.tileEntities().size();
-        } else {
-            count = chunk.tileEntities().stream().filter(tileEntity -> this.filterId.equals(tileEntity.id())).count();
-        }
-        handle.accept(new CountBlocksModule.CountData(chunk.pos(), count));
+        chunk.entities().forEach(entity -> {
+            if (this.filterId.equals(entity.id())) {
+                handle.accept(new EntityModule.EntityData(entity));
+            }
+        });
+    }
+
+    @Override
+    protected void handleEntity(@NonNull Entity entity, @NonNull OutputHandle handle) {
+        handle.accept(new EntityModule.EntityData(entity));
     }
 
     @Override
     public String toString() {
-        if (this.filterId == null) {
-            return "Count - Tile Entities";
-        } else {
-            return String.format("Count - Tile Entities (id=%s)", this.filterId);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return this.filterId == null ? CountTileEntitiesModule.class.hashCode() : this.filterId.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj instanceof CountTileEntitiesModule) {
-            CountTileEntitiesModule other = (CountTileEntitiesModule) obj;
-            if (this.filterId == null) {
-                return other.filterId == null;
-            } else {
-                return this.filterId.equals(other.filterId);
-            }
-        } else {
-            return false;
-        }
+        return String.format("Entities (id=%s)", this.filterId);
     }
 }

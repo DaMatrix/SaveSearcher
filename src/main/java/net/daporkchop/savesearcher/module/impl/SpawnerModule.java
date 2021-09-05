@@ -22,8 +22,8 @@ package net.daporkchop.savesearcher.module.impl;
 import lombok.NonNull;
 import net.daporkchop.lib.minecraft.registry.ResourceLocation;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
+import net.daporkchop.savesearcher.module.merging.AbstractTileEntityByClassSearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntitySpawner;
 
@@ -32,7 +32,7 @@ import java.util.Objects;
 /**
  * @author DaPorkchop_
  */
-public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.SpawnerData> {
+public final class SpawnerModule extends AbstractTileEntityByClassSearchModule<SpawnerModule.SpawnerData, TileEntitySpawner> {
     protected final ResourceLocation filterId;
 
     public SpawnerModule(String[] args) {
@@ -49,19 +49,9 @@ public final class SpawnerModule extends AbstractSearchModule<SpawnerModule.Spaw
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
-        if (this.filterId == null) {
-            chunk.tileEntities().stream()
-                    .filter(TileEntitySpawner.class::isInstance)
-                    .map(te -> new SpawnerData((TileEntitySpawner) te))
-                    .forEach(handle::accept);
-        } else {
-            chunk.tileEntities().stream()
-                    .filter(TileEntitySpawner.class::isInstance)
-                    .map(TileEntitySpawner.class::cast)
-                    .filter(te -> te.canSpawn(this.filterId))
-                    .map(SpawnerData::new)
-                    .forEach(handle::accept);
+    protected void handleTileEntity(@NonNull Chunk chunk, @NonNull TileEntitySpawner tileEntity, @NonNull OutputHandle handle) {
+        if (this.filterId == null || tileEntity.canSpawn(this.filterId)) {
+            handle.accept(new SpawnerData(tileEntity));
         }
     }
 

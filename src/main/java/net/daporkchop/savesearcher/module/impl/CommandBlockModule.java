@@ -23,8 +23,8 @@ import lombok.NonNull;
 import net.daporkchop.lib.common.ref.Ref;
 import net.daporkchop.lib.common.ref.ThreadRef;
 import net.daporkchop.lib.minecraft.world.Chunk;
-import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
+import net.daporkchop.savesearcher.module.merging.AbstractTileEntityByClassSearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.tileentity.TileEntityCommandBlock;
 
@@ -33,7 +33,7 @@ import java.util.regex.Matcher;
 /**
  * @author DaPorkchop_
  */
-public final class CommandBlockModule extends AbstractSearchModule<CommandBlockModule.CommandBlockData> {
+public final class CommandBlockModule extends AbstractTileEntityByClassSearchModule<CommandBlockModule.CommandBlockData, TileEntityCommandBlock> {
     protected final Ref<Matcher> matcherCache;
 
     public CommandBlockModule(String[] args) {
@@ -50,20 +50,9 @@ public final class CommandBlockModule extends AbstractSearchModule<CommandBlockM
     }
 
     @Override
-    protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
-        if (this.matcherCache == null) {
-            chunk.tileEntities().stream()
-                    .filter(TileEntityCommandBlock.class::isInstance)
-                    .map(te -> new CommandBlockData((TileEntityCommandBlock) te))
-                    .forEach(handle::accept);
-        } else {
-            Matcher matcher = this.matcherCache.get();
-            chunk.tileEntities().stream()
-                    .filter(TileEntityCommandBlock.class::isInstance)
-                    .map(TileEntityCommandBlock.class::cast)
-                    .filter(te -> matcher.reset(te.command()).matches())
-                    .map(CommandBlockData::new)
-                    .forEach(handle::accept);
+    protected void handleTileEntity(@NonNull Chunk chunk, @NonNull TileEntityCommandBlock tileEntity, @NonNull OutputHandle handle) {
+        if (this.matcherCache == null || this.matcherCache.get().reset(tileEntity.command()).find()) {
+            handle.accept(new CommandBlockData(tileEntity));
         }
     }
 

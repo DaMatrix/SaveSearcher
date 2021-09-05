@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -20,11 +20,16 @@
 package net.daporkchop.savesearcher.module;
 
 import lombok.NonNull;
+import net.daporkchop.lib.common.function.plain.TriConsumer;
 import net.daporkchop.lib.minecraft.region.util.ChunkProcessor;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.savesearcher.output.OutputHandle;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * The core of all SaveSearcher modules.
@@ -34,6 +39,27 @@ import java.io.IOException;
  * @author DaPorkchop_
  */
 public interface SearchModule extends ChunkProcessor, AutoCloseable {
+    static <M> List<M> merge(@NonNull List<M> modules, @NonNull TriConsumer<M, List<M>, Consumer<M>> mergeFunction) {
+        modules = new LinkedList<>(modules);
+        List<M> newModules = new LinkedList<>();
+
+        //try to merge all modules with each other until nothing happens any more
+        OUTER_LOOP:
+        while (true) {
+            for (M module : modules) {
+                mergeFunction.accept(module, modules, newModules::add);
+
+                if (!newModules.isEmpty()) {
+                    modules.addAll(newModules);
+                    newModules.clear();
+                    continue OUTER_LOOP;
+                }
+            }
+
+            return new ArrayList<>(modules);
+        }
+    }
+
     /**
      * Initializes this module for searching the given world.
      * <p>
@@ -58,4 +84,14 @@ public interface SearchModule extends ChunkProcessor, AutoCloseable {
      * @return the class of values that will be returned by this module
      */
     Class<?> dataType();
+
+    /**
+     * Attempts to merge some of the given search modules.
+     *
+     * @param in the list of input modules
+     * @param addMerged a callback function to pass newly merged modules to
+     */
+    default void merge(@NonNull List<SearchModule> in, @NonNull Consumer<SearchModule> addMerged) {
+        //no-op
+    }
 }

@@ -38,14 +38,14 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
 import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
 import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.impl.EntityModule;
+import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
 import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
-import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
-import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
+import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
@@ -57,10 +57,10 @@ import net.daporkchop.savesearcher.util.Version;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,7 +79,7 @@ public class Main {
             this.put("--count", CountBlocksModule::find);
             this.put("--doublechest", DoubleChestModule::new);
             this.put("--emptychunks", EmptyChunksModule::new);
-            this.put("--entity", EntityModule::new);
+            this.put("--entity", EntityModule::find);
             this.put("--netherchunks", NetherChunksModule::new);
             this.put("--brokenportals", BrokenPortalModule::new);
             this.put("--spawner", SpawnerModule::new);
@@ -159,7 +159,7 @@ public class Main {
         boolean verbose = false;
         boolean overwrite = false;
         String formatName = "csv";
-        Collection<SearchModule> modules = new ArrayDeque<>();
+        List<SearchModule> modules = new ArrayList<>();
         for (String s : args) {
             if (s.isEmpty()) {
                 continue;
@@ -253,6 +253,8 @@ public class Main {
                 module.init(world, REGISTERED_OUTPUTS.get(formatName).apply(outDir));
             }
 
+            List<SearchModule> mergedModules = SearchModule.merge(modules, SearchModule::merge);
+
             WorldScanner scanner = new WorldScanner(world) {
                 @Override
                 public WorldScanner addProcessor(ChunkProcessor processor) {
@@ -276,11 +278,11 @@ public class Main {
                     count.increment();
                 });
             }
-            modules.forEach(scanner::addProcessor);
+            mergedModules.forEach(scanner::addProcessor);
             scanner.run(true);
 
             logger.info("Finishing...");
-            modules.forEach((IOConsumer<SearchModule>) SearchModule::close);
+            mergedModules.forEach((IOConsumer<SearchModule>) SearchModule::close);
         }
         time = System.currentTimeMillis() - time;
         logger.success("Done!").success(

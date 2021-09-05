@@ -19,7 +19,6 @@
 
 package net.daporkchop.savesearcher.module.impl;
 
-import com.google.gson.JsonObject;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.logging.format.FormatParser;
@@ -30,16 +29,14 @@ import net.daporkchop.lib.minecraft.text.parser.MinecraftFormatParser;
 import net.daporkchop.lib.minecraft.tileentity.impl.TileEntitySign;
 import net.daporkchop.lib.minecraft.world.Chunk;
 import net.daporkchop.lib.minecraft.world.World;
-import net.daporkchop.savesearcher.module.AbstractSearchModule;
 import net.daporkchop.savesearcher.module.PositionData;
+import net.daporkchop.savesearcher.module.merging.AbstractTileEntityByClassSearchModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
-
-import java.util.Objects;
 
 /**
  * @author DaPorkchop_
  */
-public final class SignModule extends AbstractSearchModule<SignModule.SignData> {
+public final class SignModule extends AbstractTileEntityByClassSearchModule<SignModule.SignData, TileEntitySign> {
     private static final FormatParser PARSER = new MinecraftFormatParser();
 
     private final Mode mode;
@@ -88,10 +85,15 @@ public final class SignModule extends AbstractSearchModule<SignModule.SignData> 
     }
 
     @Override
+    protected void handleTileEntity(@NonNull Chunk chunk, @NonNull TileEntitySign tileEntity, @NonNull OutputHandle handle) {
+        handle.accept(new SignData(chunk, tileEntity, this.mode));
+    }
+
+    @Override
     protected void processChunk(@NonNull Chunk chunk, @NonNull OutputHandle handle) {
         chunk.tileEntities().stream()
                 .filter(TileEntitySign.class::isInstance)
-                .map(te -> new SignData((TileEntitySign) te, chunk, this.mode))
+                .map(te -> new SignData(chunk, (TileEntitySign) te, this.mode))
                 .forEach(handle::accept);
     }
 
@@ -152,7 +154,7 @@ public final class SignModule extends AbstractSearchModule<SignModule.SignData> 
         public final String type;
         public final String direction;
 
-        public SignData(@NonNull TileEntitySign te, @NonNull Chunk chunk, @NonNull Mode mode) {
+        public SignData(@NonNull Chunk chunk, @NonNull TileEntitySign te, @NonNull Mode mode) {
             super(te);
 
             this.line1 = mode.parse(te.line1());
