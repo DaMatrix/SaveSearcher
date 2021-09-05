@@ -43,9 +43,6 @@ public final class CountBlocksModule extends AbstractSearchModule<CountBlocksMod
         String type = null;
 
         for (String s : args) {
-            if (s.isEmpty()) {
-                continue;
-            }
             String[] split = s.split("=");
             if (split.length != 2) {
                 throw new IllegalArgumentException(String.format("Invalid argument: %s", s));

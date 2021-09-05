@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2020 DaPorkchop_
+ * Copyright (c) 2018-2021 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -39,11 +39,11 @@ public final class EntityModule extends AbstractSearchModule<EntityModule.Entity
 
     public EntityModule(String[] args) {
         switch (args.length) {
-            case 1:
+            case 0:
                 this.filterId = null;
                 break;
-            case 2:
-                this.filterId = new ResourceLocation(args[1]);
+            case 1:
+                this.filterId = new ResourceLocation(args[0]);
                 break;
             default:
                 throw new IllegalArgumentException("--entity must be called with either no arguments or the entity ID to search for!");

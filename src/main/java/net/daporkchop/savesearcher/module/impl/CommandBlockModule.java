@@ -38,11 +38,11 @@ public final class CommandBlockModule extends AbstractSearchModule<CommandBlockM
 
     public CommandBlockModule(String[] args) {
         switch (args.length) {
-            case 1:
+            case 0:
                 this.matcherCache = null;
                 break;
-            case 2:
-                this.matcherCache = ThreadRef.regex(args[1]);
+            case 1:
+                this.matcherCache = ThreadRef.regex(args[0]);
                 break;
             default:
                 throw new IllegalArgumentException("--command_block must be called with either no arguments or a regex matching the command to search for!");
