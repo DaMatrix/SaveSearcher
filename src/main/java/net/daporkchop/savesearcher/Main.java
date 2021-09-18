@@ -40,9 +40,18 @@ import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
 import net.daporkchop.savesearcher.module.impl.*;
 import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
+import net.daporkchop.savesearcher.module.impl.BrokenLightingModule;
+import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
+import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
+import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
+import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
+import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
+import net.daporkchop.savesearcher.module.impl.SignModule;
+import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.module.impl.tileentity.TileEntityModule;
+import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
@@ -81,6 +90,7 @@ public class Main {
             this.put("--sign", SignModule::new);
             this.put("--tileentity", TileEntityModule::find);
             this.put("--command_block", CommandBlockModule::new);
+            this.put("--brokenlighting", BrokenLightingModule::new);
         }
     };
 
@@ -134,7 +144,9 @@ public class Main {
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
                     .info("--tileentity(,<id>)                 Scan for tile-entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
-                    .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.");
+                    .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.")
+                    .info("--brokenlighting                    Scan for chunks with broken sky lighting, saving chunk coordinates. The JVM option '-Dsavesearcher.brokenlighting.lightCleanerPendingLightPath=<path>'")
+                    .info("                                      can optionally be used to create a PendingLight.dat file compatible with LightCleaner (Spigot plugin).");
 
             return;
         } else {
