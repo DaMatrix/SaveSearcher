@@ -38,16 +38,11 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
-import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
-import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
-import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
+import net.daporkchop.savesearcher.module.impl.*;
 import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
-import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
-import net.daporkchop.savesearcher.module.impl.SignModule;
-import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
+import net.daporkchop.savesearcher.module.impl.tileentity.TileEntityModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
@@ -84,6 +79,7 @@ public class Main {
             this.put("--brokenportals", BrokenPortalModule::new);
             this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
+            this.put("--tileentity", TileEntityModule::find);
             this.put("--command_block", CommandBlockModule::new);
         }
     };
@@ -137,6 +133,7 @@ public class Main {
                     .info("--sign(,mode=<mode>)                Scan for sign blocks, saving coordinates and text. Valid modes: plain_text (default), formatted_legacy, raw.")
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
+                    .info("--tileentity(,<id>)                 Scan for tile-entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
                     .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.");
 
             return;
