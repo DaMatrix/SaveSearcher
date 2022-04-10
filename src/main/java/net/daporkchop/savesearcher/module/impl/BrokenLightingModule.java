@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2021 DaPorkchop_
+ * Copyright (c) 2018-2022 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -34,11 +34,15 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 
@@ -46,15 +50,33 @@ import java.util.zip.DeflaterOutputStream;
  * @author DaPorkchop_
  */
 public final class BrokenLightingModule extends AbstractSearchModule<PositionDataXZ> {
+    protected final String lightcleaner;
+
     public BrokenLightingModule(String[] args) {
+       String lightcleaner = null;
+
+        for (String s : args) {
+            String[] split = s.split("=");
+            if (split.length != 2) {
+                throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
+            }
+            switch (split[0]) {
+                case "lightcleaner":
+                    lightcleaner = split[1];
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
+            }
+        }
+
+        this.lightcleaner = lightcleaner;
     }
 
     @Override
     public void init(@NonNull World world, @NonNull OutputHandle handle) {
         super.init(world, handle);
 
-        String lightCleanerPath = System.getProperty("savesearcher.brokenlighting.lightCleanerPendingLightPath", null);
-        if (lightCleanerPath != null) {
+        if (this.lightcleaner != null) {
             this.handle = new OutputHandle() {
                 final List<PositionDataXZ> positions = Collections.synchronizedList(new ArrayList<>());
 
@@ -67,7 +89,7 @@ public final class BrokenLightingModule extends AbstractSearchModule<PositionDat
                 public void close() throws IOException {
                     handle.close();
 
-                    try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new FileOutputStream(lightCleanerPath))))) {
+                    try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new FileOutputStream(BrokenLightingModule.this.lightcleaner))))) {
                         out.writeInt(-1);
                         out.writeByte(2);
 

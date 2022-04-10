@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2021 DaPorkchop_
+ * Copyright (c) 2018-2022 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -145,8 +145,8 @@ public class Main {
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
                     .info("--tileentity(,<id>)                 Scan for tile-entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
                     .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.")
-                    .info("--brokenlighting                    Scan for chunks with broken sky lighting, saving chunk coordinates. The JVM option '-Dsavesearcher.brokenlighting.lightCleanerPendingLightPath=<path>'")
-                    .info("                                      can optionally be used to create a PendingLight.dat file compatible with LightCleaner (Spigot plugin).");
+                    .info("--brokenlighting                    Scan for chunks with broken sky lighting, saving chunk coordinates. Can optionally create a PendingLight.dat file compatible")
+                    .info("       (,lightcleaner=<path>)         with LightCleaner (Spigot plugin).");
 
             return;
         } else {
