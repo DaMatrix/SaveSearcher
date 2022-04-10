@@ -110,7 +110,8 @@ public class Main {
         });
 
         if (!Zlib.PROVIDER.isNative()) {
-            throw new IllegalStateException("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32");
+            logger.warn("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32")
+                    .warn("This could have significant performance implications!");
         }
 
         if (args.length == 0
