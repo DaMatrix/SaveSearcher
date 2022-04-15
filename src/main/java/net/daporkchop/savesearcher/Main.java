@@ -43,6 +43,7 @@ import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
 import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
 import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
+import net.daporkchop.savesearcher.module.impl.BiomeModule;
 import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
 import net.daporkchop.savesearcher.module.impl.SpawnerModule;
@@ -80,6 +81,7 @@ public class Main {
             this.put("--doublechest", DoubleChestModule::new);
             this.put("--emptychunks", EmptyChunksModule::new);
             this.put("--entity", EntityModule::find);
+            this.put("--biomes", BiomeModule::find);
             this.put("--netherchunks", NetherChunksModule::new);
             this.put("--brokenportals", BrokenPortalModule::new);
             this.put("--spawner", SpawnerModule::new);
@@ -137,6 +139,7 @@ public class Main {
                     .info("--sign(,mode=<mode>)                Scan for sign blocks, saving coordinates and text. Valid modes: plain_text (default), formatted_legacy, raw.")
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
+                    .info("--biomes(,<id>)                     Scan for biomes, filtering based on biome ID.")
                     .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.");
 
             return;
