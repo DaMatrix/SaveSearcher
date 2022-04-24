@@ -35,4 +35,21 @@ public class BiomeModule extends AbstractSearchModule<Vec2i> {
             }
         }
     }
+
+
+
+    @Override
+    public String toString() {
+        return String.format("Biomes (id=%s)", biomeId);
+    }
+
+    @Override
+    public int hashCode() {
+        return BiomeModule.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof BiomeModule;
+    }
 }
