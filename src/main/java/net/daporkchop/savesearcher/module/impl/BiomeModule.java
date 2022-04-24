@@ -29,10 +29,8 @@ public class BiomeModule extends AbstractSearchModule<Vec2i> {
 
         for (int xx = 15; xx >= 0; xx--) {
             for (int zz = 15; zz >= 0; zz--) {
-                for (int y = 255; y >= 0; y--) {
-                    if (chunk.getBiomeId(x + xx, z + zz) == biomeId) {
-                        handle.accept(new Vec2i(x + xx, z + zz));
-                    }
+                if (chunk.getBiomeId(x + xx, z + zz) == biomeId) {
+                    handle.accept(new Vec2i(x + xx, z + zz));
                 }
             }
         }
