@@ -225,7 +225,7 @@ public class Main {
             if (overwrite) {
                 logger.warn("Deleting contents of \"%s\" as -o is enabled...", outDir.getAbsolutePath());
                 PFiles.rmContents(outDir);
-            } else {
+            } else if (outDir.list().length != 0) {
                 logger.error("Output directory \"%s\" is not empty!", outDir.getAbsolutePath())
                         .error("Use -o to forcibly delete existing files, or delete them manually.");
                 System.exit(1);
