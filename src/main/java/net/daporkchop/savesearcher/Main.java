@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2021 DaPorkchop_
+ * Copyright (c) 2018-2022 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -38,6 +38,9 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
+import net.daporkchop.savesearcher.module.impl.*;
+import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
+import net.daporkchop.savesearcher.module.impl.BrokenLightingModule;
 import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
 import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
 import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
@@ -49,6 +52,8 @@ import net.daporkchop.savesearcher.module.impl.SignModule;
 import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
+import net.daporkchop.savesearcher.module.impl.tileentity.TileEntityModule;
+import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
@@ -86,7 +91,9 @@ public class Main {
             this.put("--brokenportals", BrokenPortalModule::new);
             this.put("--spawner", SpawnerModule::new);
             this.put("--sign", SignModule::new);
+            this.put("--tileentity", TileEntityModule::find);
             this.put("--command_block", CommandBlockModule::new);
+            this.put("--brokenlighting", BrokenLightingModule::new);
         }
     };
 
@@ -106,7 +113,8 @@ public class Main {
         });
 
         if (!Zlib.PROVIDER.isNative()) {
-            throw new IllegalStateException("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32");
+            logger.warn("Native zlib couldn't be loaded! Only supported on x86_64-linux-gnu, x86-linux-gnu and x86_64-w64-mingw32")
+                    .warn("This could have significant performance implications!");
         }
 
         if (args.length == 0
@@ -140,7 +148,10 @@ public class Main {
                     .info("--spawner(,<id>)                    Scan for spawner blocks, optionally filtering based on mob type and saving coordinates and entity type.")
                     .info("--entity(,<id>)                     Scan for entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
                     .info("--biomes(,<id>)                     Scan for biomes, optionally filtering based on biome ID and saving coordinates.")
-                    .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.");
+                    .info("--tileentity(,<id>)                 Scan for tile-entities, optionally filtering based on entity ID and saving coordinates and NBT data.")
+                    .info("--command_block(,<command_regex>)   Scan for command blocks, optionally filtering based on commands that match a given regex and saving coordinates, command, and last output.")
+                    .info("--brokenlighting                    Scan for chunks with broken sky lighting, saving chunk coordinates. Can optionally create a PendingLight.dat file compatible")
+                    .info("       (,lightcleaner=<path>)         with LightCleaner (Spigot plugin).");
 
             return;
         } else {
@@ -218,7 +229,7 @@ public class Main {
             if (overwrite) {
                 logger.warn("Deleting contents of \"%s\" as -o is enabled...", outDir.getAbsolutePath());
                 PFiles.rmContents(outDir);
-            } else {
+            } else if (outDir.list().length != 0) {
                 logger.error("Output directory \"%s\" is not empty!", outDir.getAbsolutePath())
                         .error("Use -o to forcibly delete existing files, or delete them manually.");
                 System.exit(1);

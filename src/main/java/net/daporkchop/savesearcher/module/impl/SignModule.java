@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2021 DaPorkchop_
+ * Copyright (c) 2018-2022 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -19,6 +19,7 @@
 
 package net.daporkchop.savesearcher.module.impl;
 
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.logging.format.FormatParser;
@@ -36,12 +37,15 @@ import net.daporkchop.savesearcher.output.OutputHandle;
 /**
  * @author DaPorkchop_
  */
+@EqualsAndHashCode(callSuper = false)
 public final class SignModule extends AbstractTileEntityByClassSearchModule<SignModule.SignData, TileEntitySign> {
     private static final FormatParser PARSER = new MinecraftFormatParser();
 
     private final Mode mode;
 
+    @EqualsAndHashCode.Exclude
     private int standing_sign;
+    @EqualsAndHashCode.Exclude
     private int wall_sign;
 
     public SignModule(String[] args) {
@@ -100,22 +104,6 @@ public final class SignModule extends AbstractTileEntityByClassSearchModule<Sign
     @Override
     public String toString() {
         return String.format("Signs (mode=%s)", this.mode.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return SignModule.class.hashCode() ^ this.mode.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj instanceof SignModule) {
-            return this.mode == ((SignModule) obj).mode;
-        } else {
-            return false;
-        }
     }
 
     @RequiredArgsConstructor
