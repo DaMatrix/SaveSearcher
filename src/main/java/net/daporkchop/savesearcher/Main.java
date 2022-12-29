@@ -38,14 +38,12 @@ import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
 import net.daporkchop.lib.minecraft.world.impl.SaveBuilder;
 import net.daporkchop.savesearcher.module.SearchModule;
-import net.daporkchop.savesearcher.module.impl.*;
+import net.daporkchop.savesearcher.module.impl.chest.ChestModule;
 import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
 import net.daporkchop.savesearcher.module.impl.BrokenLightingModule;
 import net.daporkchop.savesearcher.module.impl.BrokenPortalModule;
 import net.daporkchop.savesearcher.module.impl.CommandBlockModule;
-import net.daporkchop.savesearcher.module.impl.DoubleChestModule;
 import net.daporkchop.savesearcher.module.impl.EmptyChunksModule;
-import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
 import net.daporkchop.savesearcher.module.impl.biome.BiomeModule;
 import net.daporkchop.savesearcher.module.impl.NetherChunksModule;
 import net.daporkchop.savesearcher.module.impl.SignModule;
@@ -53,7 +51,6 @@ import net.daporkchop.savesearcher.module.impl.SpawnerModule;
 import net.daporkchop.savesearcher.module.impl.block.BlockModule;
 import net.daporkchop.savesearcher.module.impl.count.CountBlocksModule;
 import net.daporkchop.savesearcher.module.impl.tileentity.TileEntityModule;
-import net.daporkchop.savesearcher.module.impl.entity.EntityModule;
 import net.daporkchop.savesearcher.output.OutputHandle;
 import net.daporkchop.savesearcher.output.csv.CSVOutputHandle;
 import net.daporkchop.savesearcher.output.csv.CompressedCSVOutputHandle;
@@ -72,6 +69,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static net.daporkchop.lib.logging.Logging.*;
 
@@ -83,7 +81,11 @@ public class Main {
         {
             this.put("--block", BlockModule::find);
             this.put("--count", CountBlocksModule::find);
-            this.put("--doublechest", DoubleChestModule::new);
+            this.put("--chest", ChestModule::find);
+            this.put("--doublechest", args -> {
+                logger.warn("The --doublechest module was requested, which is no longer supported! Use --chest,double=true.");
+                return ChestModule.find(Stream.concat(Stream.of(args), Stream.of("double=true")).toArray(String[]::new));
+            });
             this.put("--emptychunks", EmptyChunksModule::new);
             this.put("--entity", EntityModule::find);
             this.put("--biomes", BiomeModule::find);
@@ -135,12 +137,12 @@ public class Main {
                     .info("MODULES")
                     .info("--block,id=<id>(,meta=<meta>)       Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default")
                     .info("      (,min=<min>)(,max=<max>)        it's ignored. Both min and max values are inclusive, and default to min=0 and max=255 if not given. Adding the invert flag will cause")
-                    .info("      (,invert)(,chunkinvert)         a search for block coordinates where the given block id+meta does not occur. Adding the chunkinvert flag will cause a search for chunk")
-                    .info("                                      coordinates where the given block id+meta does not occur. invert and chunkinvert may not be used together.")
+                    .info("      (,invert=<true/false>)          a search for block coordinates where the given block id+meta does not occur. Adding the chunkinvert flag will cause a search for chunk")
+                    .info("      (,chunkinvert=<true/false>)     coordinates where the given block id+meta does not occur. invert and chunkinvert may not be used together.")
                     .info("--count,type=<type>(,id=<id>)       Counts the number of occurrences of the given type in each chunk, saving chunk coordinates and count. Valid types: block, tileentity. id")
                     .info("      (,meta=<meta>)                  is required for block, optional for tileentity. meta is optional for block, not allowed for tileentity.")
-                    .info("--doublechest                       Scan for double chests, saving coordinates and whether or not they're trapped.")
-                    .warn("                                      WARNING! Can cause significant slowdown!")
+                    .info("--chest(,double=<true/false>)       Scan for (double) chests, saving coordinates and whether or not they're trapped, and optionally the ID+meta of the block above them.")
+                    .warn("      (,above=<true/false>)           WARNING! Can cause significant slowdown!")
                     .info("--netherchunks                      Scan for nether chunks that have somehow ended up in the overworld.")
                     .info("--emptychunks                       Scan for empty (air-only) chunks.")
                     .info("--brokenportals                     Scan for portals that aren't supported by an obsidian frame.")

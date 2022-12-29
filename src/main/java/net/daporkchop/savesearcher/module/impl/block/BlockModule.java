@@ -88,13 +88,13 @@ public final class BlockModule extends AbstractChunkSectionSearchModule<Vec3i> i
                     if (chunkinvert) {
                         throw new IllegalArgumentException("invert and chunkinvert cannot be used together!");
                     }
-                    invert = true;
+                    invert = Boolean.parseBoolean(split[1]);
                     break;
                 case "chunkinvert":
                     if (invert) {
                         throw new IllegalArgumentException("invert and chunkinvert cannot be used together!");
                     }
-                    chunkinvert = true;
+                    chunkinvert = Boolean.parseBoolean(split[1]);
                     break;
                 default:
                     throw new IllegalArgumentException(String.format("Invalid argument: %s", s));
