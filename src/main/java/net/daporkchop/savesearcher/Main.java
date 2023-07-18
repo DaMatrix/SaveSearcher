@@ -1,7 +1,7 @@
 /*
  * Adapted from The MIT License (MIT)
  *
- * Copyright (c) 2018-2022 DaPorkchop_
+ * Copyright (c) 2018-2023 DaPorkchop_
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
@@ -33,6 +33,7 @@ import net.daporkchop.lib.minecraft.tileentity.TileEntityRegistry;
 import net.daporkchop.lib.minecraft.world.MinecraftSave;
 import net.daporkchop.lib.minecraft.world.World;
 import net.daporkchop.lib.minecraft.world.format.anvil.AnvilSaveFormat;
+import net.daporkchop.lib.minecraft.world.format.anvil.AnvilWorldManager;
 import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionFile;
 import net.daporkchop.lib.minecraft.world.format.anvil.region.RegionOpenOptions;
 import net.daporkchop.lib.minecraft.world.impl.MinecraftSaveConfig;
@@ -60,12 +61,7 @@ import net.daporkchop.savesearcher.util.Version;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
@@ -133,6 +129,10 @@ public class Main {
                     .info("--verbose                           Print status updates to console")
                     .info("--format=<format>                   Sets the format that the output data will be written in. valid formats=csv,csv_gz default=csv")
                     .info("--output=<path>                     Set the root directory that output data will be written to. default=./scanresult/")
+                    .info("--minChunkX=<value>                 Limits the area of the world to scan by setting the minimum/maximum X/Z coordinate to scan. Both minimum and")
+                    .info("--maxChunkX=<value>                   maximum values are inclusive, and are measured in chunks. If unset, the minimum/maximum values default to")
+                    .info("--minChunkZ=<value>                   negative/positive infinity, respectively.")
+                    .info("--maxChunkZ=<value>")
                     .info("")
                     .info("MODULES")
                     .info("--block,id=<id>(,meta=<meta>)       Scan for a certain block id+meta, saving coordinates. Block ids should be in format 'minecraft:stone'. Meta must be 0-15, by default")
@@ -172,6 +172,7 @@ public class Main {
         File worldFile = null;
         File outDir = new File("scanresult");
         int dim = 0;
+        ScanRange range = new ScanRange();
         boolean verbose = false;
         boolean overwrite = false;
         String formatName = "csv";
@@ -203,6 +204,18 @@ public class Main {
                 case "--verbose":
                 case "-v":
                     verbose = true;
+                    continue;
+                case "--minChunkX":
+                    range.regionMinX = (range.chunkMinX = Integer.parseInt(split[1])) >> 5;
+                    continue;
+                case "--maxChunkX":
+                    range.regionMaxX = (range.chunkMaxX = Integer.parseInt(split[1])) >> 5;
+                    continue;
+                case "--minChunkZ":
+                    range.regionMinZ = (range.chunkMinZ = Integer.parseInt(split[1])) >> 5;
+                    continue;
+                case "--maxChunkZ":
+                    range.regionMaxZ = (range.chunkMaxZ = Integer.parseInt(split[1])) >> 5;
                     continue;
             }
             split = s.split(",");
@@ -280,6 +293,32 @@ public class Main {
                         return super.addProcessor(processor);
                     }
                 }
+
+                @Override
+                protected Collection<Vec2i> getRegionPositions(AnvilWorldManager anvilWorldManager) {
+                    Collection<Vec2i> regions = super.getRegionPositions(anvilWorldManager);
+                    regions.removeIf(range::excludesRegion);
+                    return regions;
+                }
+
+                @Override
+                protected void maskVisitableChunksInRegion(int regionX, int regionZ, int baseChunkX, int baseChunkZ, BitSet mask) {
+                    super.maskVisitableChunksInRegion(regionX, regionZ, baseChunkX, baseChunkZ, mask);
+
+                    if (range.excludesRegion(regionX, regionZ)) { //the region isn't being processed, skip it entirely
+                        mask.clear();
+                        return;
+                    }
+
+                    //skip chunks outside the configured range
+                    for (int x = 0; x < 32; x++) {
+                        for (int z = 0; z < 32; z++) {
+                            if (range.excludesChunk(baseChunkX + x, baseChunkZ + z)) {
+                                mask.clear(x * 32 + z);
+                            }
+                        }
+                    }
+                }
             };
             if (verbose) {
                 scanner.addProcessor((current, estimatedTotal, column) -> {
@@ -319,5 +358,29 @@ public class Main {
         }
 
         return false;
+    }
+
+    private static final class ScanRange {
+        public int chunkMinX = Integer.MIN_VALUE;
+        public int chunkMaxX = Integer.MAX_VALUE;
+        public int chunkMinZ = Integer.MIN_VALUE;
+        public int chunkMaxZ = Integer.MAX_VALUE;
+
+        public int regionMinX = Integer.MIN_VALUE;
+        public int regionMaxX = Integer.MAX_VALUE;
+        public int regionMinZ = Integer.MIN_VALUE;
+        public int regionMaxZ = Integer.MAX_VALUE;
+
+        public boolean excludesRegion(Vec2i regionPos) {
+            return this.excludesRegion(regionPos.getX(), regionPos.getY());
+        }
+
+        public boolean excludesRegion(int regionX, int regionZ) {
+            return regionX < this.regionMinX || regionX > this.regionMaxX || regionZ < this.regionMinZ || regionZ > this.regionMaxZ;
+        }
+
+        public boolean excludesChunk(int chunkX, int chunkZ) {
+            return chunkX < this.chunkMinX || chunkX > this.chunkMaxX || chunkZ < this.chunkMinZ || chunkZ > this.chunkMaxZ;
+        }
     }
 }
